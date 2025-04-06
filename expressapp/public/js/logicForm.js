@@ -14,8 +14,6 @@ const formResult = document.querySelector('[data-form="result"]');
 // работа формы перехода к голосованию
 formTransition.addEventListener("submit", (event) => {
   event.preventDefault();
-  console.log(event.target);
-
   divTransition.classList.add("unvisible");
   getData("/variants");
   divVote.classList.remove("unvisible");

@@ -30,9 +30,8 @@ webserver.post("/vote", function (request, response) {
   let key = request.body.colour;
   const object = JSON.parse(fs.readFileSync("answer.json", "utf8"));
   object[key] = object[key] + 1;
-  console.log(object[key]);
   fs.writeFileSync("answer.json", JSON.stringify(object));
-  response.status(200).send(request.body);
+  response.status(200);
 });
 
 // получаем статистику ответов
@@ -41,5 +40,5 @@ webserver.post("/stat", function (request, response) {
   response.status(200).send(fs.readFileSync("answer.json", "utf8"));
 });
 
-// начинаем прослушивать подключения на 3000 порту
-webserver.listen(3000);
+// начинаем прослушивать подключения на 7622 порту
+webserver.listen(7681);
