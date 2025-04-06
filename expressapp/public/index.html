@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vote</title>
+    <link href="/css/style.css" type="text/css" rel="stylesheet" />
+</head>
+
+<body>
+    <div class="" data-div="transition">
+        <form method=GET action="/variants" target="_self" data-form="transition">
+            <button type="submit">Перейти к голосованию</button>
+        </form>
+    </div>
+    <div class="unvisible" data-div="vote">
+        <form method=POST action="/vote" target="_self" data-form="vote">
+            <fieldset data-fieldset="vote">
+            </fieldset>
+            <button type="submit">Голосовать</button>
+        </form>
+    </div>
+    <div data-div="result">
+        <form method=POST action="/stat" target="_self" data-form="result">
+            <button type="submit">Результат голосования</button>
+        </form>
+    </div>
+
+</body>
+<script type="module" src="/js/logicForm.js"></script>
+<script type="module" src="/js/createElement.js"></script>
+</html>
