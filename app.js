@@ -31,7 +31,7 @@ webserver.post("/vote", function (request, response) {
   const object = JSON.parse(fs.readFileSync("answer.json", "utf8"));
   object[key] = object[key] + 1;
   fs.writeFileSync("answer.json", JSON.stringify(object));
-  response.status(200);
+  response.sendStatus(200);
 });
 
 // получаем статистику ответов

@@ -1,5 +1,8 @@
 const fieldsetForVote = document.querySelector('[data-fieldset="vote"]');
 const divResult = document.querySelector('[data-div="result"]');
+const divStatAndVariants = document.querySelector(
+  '[data-div="statAndVariants"]'
+);
 
 // удаляем содержимое опросника
 export const deleteElementsFromFieldset = () => {
@@ -37,5 +40,19 @@ export const createElementInDiv = (json) => {
     let divElement = document.createElement("div");
     divElement.textContent = JSON.stringify(json);
     divResult.appendChild(divElement);
+  }
+};
+
+export const createElementsInDiv = (json) => {
+  divStatAndVariants.querySelector("div");
+  let divElement = document.createElement("div");
+  divElement.textContent = JSON.stringify(json);
+  divStatAndVariants.appendChild(divElement);
+};
+
+export const deleteElementsInDiv = () => {
+  let allDives = divStatAndVariants.querySelectorAll("div");
+  for (let i = 0; i < allDives.length; i++) {
+    allDives[i].remove();
   }
 };

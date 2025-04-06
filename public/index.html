@@ -11,19 +11,24 @@
 <body>
     <div class="" data-div="transition">
         <form method=GET action="/variants" target="_self" data-form="transition">
-            <button type="submit">Перейти к голосованию</button>
+            <button type="submit">Отобразить варианты ответов в виде кнопок</button>
         </form>
     </div>
     <div class="unvisible" data-div="vote">
         <form method=POST action="/vote" target="_self" data-form="vote">
             <fieldset data-fieldset="vote">
             </fieldset>
-            <button type="submit">Голосовать</button>
+            <button type="submit">При нажатии на кнопку — отправить ответ, запросить и отобразить обновлённую статистику</button>
         </form>
     </div>
     <div data-div="result">
         <form method=POST action="/stat" target="_self" data-form="result">
-            <button type="submit">Результат голосования</button>
+            <button type="submit">Отобразить текущую статистику в любом виде</button>
+        </form>
+    </div>
+    <div data-div="statAndVariants">
+        <form method=POST target="_self" data-form="statAndVariants">
+            <button type="submit">Получить с бэкенда статистику ответов и варианты ответов</button>
         </form>
     </div>
 
