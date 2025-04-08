@@ -26,19 +26,46 @@ webserver.get("/variants", function (request, response) {
 
 // получаем результат голосования
 webserver.post("/vote", function (request, response) {
-  if (!request.body) return response.sendStatus(400);
-  let key = request.body.colour;
-  const object = JSON.parse(fs.readFileSync("answer.json", "utf8"));
-  object[key] = object[key] + 1;
-  fs.writeFileSync("answer.json", JSON.stringify(object));
-  response.sendStatus(200);
+  try {
+    if (!request.body) throw new Error("Получение данных завершилось неудачей");
+    let key = escapeHTML(request.body.colour);
+    const object = JSON.parse(fs.readFileSync("answer.json", "utf8"));
+    if (!object.hasOwnProperty(key)) throw new Error("Неверные данные");
+    object[key] = object[key] + 1;
+    fs.writeFileSync("answer.json", JSON.stringify(object));
+    response.sendStatus(200);
+  } catch (error) {
+    response.sendStatus(400);
+  }
 });
 
 // получаем статистику ответов
 webserver.post("/stat", function (request, response) {
-  if (!request.body) return response.sendStatus(400);
-  response.status(200).send(fs.readFileSync("answer.json", "utf8"));
+  try {
+    if (!request.body) throw new Error("Получение данных завершилось неудачей");
+    response.status(200).send(fs.readFileSync("answer.json", "utf8"));
+  } catch (error) {
+    response.sendStatus(400);
+  }
 });
 
-// начинаем прослушивать подключения на 7622 порту
+// начинаем прослушивать подключения на 7681 порту
 webserver.listen(7681);
+
+// функция санации ключа объекта
+const escapeHTML = (text) => {
+  if (!text) return text;
+  text = text
+    .toString()
+    .split("&")
+    .join("&amp;")
+    .split("<")
+    .join("&lt;")
+    .split(">")
+    .join("&gt;")
+    .split('"')
+    .join("&quot;")
+    .split("'")
+    .join("&#039;");
+  return text;
+};
