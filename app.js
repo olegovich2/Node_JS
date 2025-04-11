@@ -77,30 +77,34 @@ webserver.get("/index.html", function (request, response) {
 // отправка вариантов ответа для голосования
 webserver.get("/variants", function (request, response) {
   try {
-    const loginString = JSON.stringify(request.query.login);
-    const passwordString = JSON.stringify(request.query.password);
     // проверка для поля логин
-    if (loginString.includes("<script>") || loginString.includes("</script>"))
-      throw new Error("Нельзя заполнять поле скриптом!");
-    if (
-      loginString.includes("<") ||
-      loginString.includes(">") ||
-      loginString.includes("/") ||
-      loginString.includes("&")
-    )
-      throw new Error("Поле логин содержит недопустимые символы");
+    if (request.query.login) {
+      const loginString = JSON.stringify(request.query.login);
+      if (loginString.includes("<script>") || loginString.includes("</script>"))
+        throw new Error("Нельзя заполнять поле скриптом!");
+      if (
+        loginString.includes("<") ||
+        loginString.includes(">") ||
+        loginString.includes("/") ||
+        loginString.includes("&")
+      )
+        throw new Error("Поле логин содержит недопустимые символы");
+    }
     // проверка для поля пароль
-    if (
-      passwordString.includes("<script>") ||
-      passwordString.includes("</script>")
-    )
-      throw new Error("Нельзя заполнять поле скриптом!");
-    if (
-      passwordString.includes("<") ||
-      passwordString.includes(">") ||
-      passwordString.includes(" ")
-    )
-      throw new Error("Поле пароль содержит недопустимые символы");
+    if (request.query.password) {
+      const passwordString = JSON.stringify(request.query.password);
+      if (
+        passwordString.includes("<script>") ||
+        passwordString.includes("</script>")
+      )
+        throw new Error("Нельзя заполнять поле скриптом!");
+      if (
+        passwordString.includes("<") ||
+        passwordString.includes(">") ||
+        passwordString.includes(" ")
+      )
+        throw new Error("Поле пароль содержит недопустимые символы");
+    }
     // отправляем страницу
     response.status(200).send(`${docHtml(request)}`);
   } catch (error) {
@@ -114,26 +118,33 @@ webserver.listen(7681);
 
 // функция создания html документа
 const docHtml = (object) => {
+  const resultObject = {};
   let anyconst = ``;
   // создаем html документ
   anyconst += objectForCreateDom.htmlHead;
   anyconst += objectForCreateDom.hForm;
   // проверка логина на длину
-  if (object.query.login.length !== 0 && object.query.login.length < 4) {
+  if (!object.query.login || object.query.login.length === 0) {
+    anyconst += objectForCreateDom.divInputLoginError;
+    anyconst += objectForCreateDom.value;
+    anyconst += objectForCreateDom.closeTag;
+    anyconst += objectForCreateDom.errorLoginOne;
+  } else if (object.query.login.length !== 0 && object.query.login.length < 4) {
     anyconst += objectForCreateDom.divInputLoginError;
     anyconst += objectForCreateDom.value;
     anyconst += object.query.login;
     anyconst += objectForCreateDom.closeTag;
     anyconst += objectForCreateDom.errorLoginTwo;
-  }
-  if (object.query.login.length !== 0 && object.query.login.length > 20) {
+  } else if (
+    object.query.login.length !== 0 &&
+    object.query.login.length > 20
+  ) {
     anyconst += objectForCreateDom.divInputLoginError;
     anyconst += objectForCreateDom.value;
     anyconst += object.query.login;
     anyconst += objectForCreateDom.closeTag;
     anyconst += objectForCreateDom.errorLoginThree;
-  }
-  if (
+  } else if (
     object.query.login.length !== 0 &&
     object.query.login.length > 4 &&
     object.query.login.length < 20
@@ -142,31 +153,34 @@ const docHtml = (object) => {
     anyconst += objectForCreateDom.value;
     anyconst += object.query.login;
     anyconst += objectForCreateDom.closeTag;
-  }
-  if (object.query.login.length === 0) {
-    anyconst += objectForCreateDom.divInputLoginError;
-    anyconst += objectForCreateDom.value;
-    anyconst += object.query.login;
-    anyconst += objectForCreateDom.closeTag;
-    anyconst += objectForCreateDom.errorLoginOne;
+    resultObject.login = "успех";
   }
   anyconst += objectForCreateDom.divClose;
   // проверка пароля на длину
-  if (object.query.password.length !== 0 && object.query.password.length <= 4) {
+  if (!object.query.password || object.query.password.length === 0) {
+    anyconst += objectForCreateDom.divInputPasswordError;
+    anyconst += objectForCreateDom.value;
+    anyconst += objectForCreateDom.closeTag;
+    anyconst += objectForCreateDom.errorPasswordOne;
+  } else if (
+    object.query.password.length !== 0 &&
+    object.query.password.length <= 4
+  ) {
     anyconst += objectForCreateDom.divInputPasswordError;
     anyconst += objectForCreateDom.value;
     anyconst += object.query.password;
     anyconst += objectForCreateDom.closeTag;
     anyconst += objectForCreateDom.errorPasswordTwo;
-  }
-  if (object.query.password.length !== 0 && object.query.password.length > 15) {
+  } else if (
+    object.query.password.length !== 0 &&
+    object.query.password.length > 15
+  ) {
     anyconst += objectForCreateDom.divInputPasswordError;
     anyconst += objectForCreateDom.value;
     anyconst += object.query.password;
     anyconst += objectForCreateDom.closeTag;
     anyconst += objectForCreateDom.errorPasswordThree;
-  }
-  if (
+  } else if (
     object.query.password.length !== 0 &&
     object.query.password.length > 4 &&
     object.query.password.length <= 15
@@ -184,6 +198,7 @@ const docHtml = (object) => {
       anyconst += object.query.password;
       anyconst += objectForCreateDom.closeTag;
       anyconst += objectForCreateDom.mediumPassword;
+      resultObject.password = "успех";
     }
     if (checkPasswords(object.query.password) === "Сложный") {
       anyconst += objectForCreateDom.successPassword;
@@ -191,18 +206,14 @@ const docHtml = (object) => {
       anyconst += object.query.password;
       anyconst += objectForCreateDom.closeTag;
       anyconst += objectForCreateDom.hardPassword;
+      resultObject.password = "успех";
     }
-  }
-  if (object.query.password.length === 0) {
-    anyconst += objectForCreateDom.divInputPasswordError;
-    anyconst += objectForCreateDom.value;
-    anyconst += object.query.password;
-    anyconst += objectForCreateDom.closeTag;
-    anyconst += objectForCreateDom.errorPasswordOne;
   }
   anyconst += objectForCreateDom.divClose;
   anyconst += objectForCreateDom.buttonForm;
   anyconst += objectForCreateDom.divHtml;
+  if (resultObject.password === "успех" && resultObject.login === "успех")
+    return "Вы успешно зарегистрировались";
   return anyconst;
 };
 
