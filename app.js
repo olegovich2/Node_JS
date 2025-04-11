@@ -35,7 +35,7 @@ webserver.post("/vote", function (request, response) {
     fs.writeFileSync("answer.json", JSON.stringify(object));
     response.sendStatus(200);
   } catch (error) {
-    response.sendStatus(400);
+    response.status(400).send(`${error}`);
   }
 });
 
@@ -45,12 +45,12 @@ webserver.post("/stat", function (request, response) {
     if (!request.body) throw new Error("Получение данных завершилось неудачей");
     response.status(200).send(fs.readFileSync("answer.json", "utf8"));
   } catch (error) {
-    response.sendStatus(400);
+    response.status(400).send(`${error}`);
   }
 });
 
 // начинаем прослушивать подключения на 7681 порту
-webserver.listen(7681);
+webserver.listen(7680);
 
 // функция санации ключа объекта
 const escapeHTML = (text) => {
