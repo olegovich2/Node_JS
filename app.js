@@ -146,8 +146,8 @@ const docHtml = (object) => {
     anyconst += objectForCreateDom.errorLoginThree;
   } else if (
     object.query.login.length !== 0 &&
-    object.query.login.length > 4 &&
-    object.query.login.length < 20
+    object.query.login.length >= 4 &&
+    object.query.login.length <= 20
   ) {
     anyconst += objectForCreateDom.successLogin;
     anyconst += objectForCreateDom.value;
