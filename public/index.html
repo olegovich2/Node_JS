@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vote</title>
+    <link href="/css/style.css" type="text/css" rel="stylesheet" />
+</head>
+
+<body>
+    <div class="div" data-div="vote">
+        <form method=POST action="/vote" target="_self" data-form="vote">
+            <fieldset data-fieldset="vote">
+            </fieldset>
+            <button type="submit">При нажатии на кнопку — отправить ответ, запросить и отобразить обновлённую
+                статистику</button>
+        </form>
+    </div>
+    <div class="rows">
+        <div class="colour">
+            <p class="red">Red</p>
+            <p class="p" data-p="red"></p>
+        </div>
+        <div class="colour">
+            <p class="blue">Blue</p>
+            <p class="p" data-p="blue"></p>
+        </div>
+        <div class="colour">
+            <p class="green">Green</p>
+            <p class="p" data-p="green"></p>
+        </div>
+    </div>
+    <div class="div" data-div="result">
+        <form method=POST action="/stat" target="_self" data-form="result">
+            <button type="submit">Отобразить текущую статистику в любом виде</button>
+        </form>
+    </div>
+    <div class="div1" data-div="statAndVariants">
+        <form method=POST target="_self" data-form="statAndVariants">
+            <button type="submit">Получить с бэкенда статистику ответов и варианты ответов</button>
+        </form>
+    </div>
+    <div class="div">
+        <form class="download" method=POST target="_self" data-form="download">
+            <button type="click" data-button="xml">Cкачать статистику в формате XML</button>
+            <button type="click" data-button="html">Cкачать статистику в формате HTML</button>
+            <button type="click" data-button="json">Cкачать статистику в формате JSON</button>
+        </form>
+    </div>
+
+</body>
+<script type="module" src="/js/logicForm.js"></script>
+<script type="module" src="/js/createElement.js"></script>
+
+</html>
