@@ -70,8 +70,6 @@ export const deleteElementsInDiv = () => {
 };
 
 export const download = (data, params) => {
-  console.log(data);
-
   if (params === "json") {
     const link = document.createElement("a");
     link.href =
@@ -79,18 +77,15 @@ export const download = (data, params) => {
       encodeURIComponent(JSON.stringify(data));
     link.download = `JSON-file${Date.now()}.json`;
     link.click();
-    // URL.revokeObjectURL(link.href);
   } else if (params === "html") {
     const link = document.createElement("a");
     link.href = "data:text/html;charset=utf-8," + encodeURIComponent(data);
     link.download = `HTML-file${Date.now()}.html`;
     link.click();
-    // URL.revokeObjectURL(link.href);
   } else if (params === "xml") {
     const link = document.createElement("a");
     link.href = "data:text/xml;charset=utf-8," + encodeURIComponent(data);
     link.download = `XML-file${Date.now()}.xml`;
     link.click();
-    // URL.revokeObjectURL(link.href);
   }
 };

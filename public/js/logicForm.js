@@ -55,6 +55,7 @@ formDownload.addEventListener("click", (event) => {
     fetchOptions.headers = { Accept: "application/json" };
     getDataForDownloadJson("/download", fetchOptions);
   }
+  formDownload.reset();
 });
 
 //получаем данные для опросника
@@ -96,11 +97,13 @@ async function postData(url, data) {
   return answer;
 }
 
-// отправляем запрос с accept
+// отправляем запрос с accept для json
 async function getDataForDownloadJson(url, fetchOptions) {
   const answer = await fetch(url, fetchOptions)
     .then((response) => {
       if (response.ok) {
+        console.log(response.headers.get("Content-Type"));
+
         if (response.headers.get("Content-Type").includes("application/json")) {
           return response.json();
         } else
@@ -110,8 +113,6 @@ async function getDataForDownloadJson(url, fetchOptions) {
       }
     })
     .then((result) => {
-      console.log(result);
-
       download(result, "json");
     })
     .catch((error) => {
@@ -119,6 +120,8 @@ async function getDataForDownloadJson(url, fetchOptions) {
     });
   return answer;
 }
+
+// отправляем запрос с accept для html
 async function getDataForDownloadHtml(url, fetchOptions) {
   const answer = await fetch(url, fetchOptions)
     .then((response) => {
@@ -137,19 +140,18 @@ async function getDataForDownloadHtml(url, fetchOptions) {
   return answer;
 }
 
+// отправляем запрос с accept для xml
 async function getDataForDownloadXml(url, fetchOptions) {
   const answer = await fetch(url, fetchOptions)
     .then((response) => {
       if (response.ok) {
         if (response.headers.get("Content-Type").includes("application/xml")) {
-          return response.json();
+          return response.text();
         } else throw new Error("Получение данных завершилось неудачей");
       }
     })
     .then((result) => {
-      const data = result;
-      const output = OBJtoXML(data);
-      download(output, "xml");
+      download(result, "xml");
     })
     .catch((error) => {
       console.error(error);
@@ -180,25 +182,3 @@ async function postDataForStat(url, source) {
 document.addEventListener("DOMContentLoaded", () => {
   getData("/variants", "start");
 });
-
-function OBJtoXML(obj) {
-  var xml = "<body>";
-  for (var prop in obj) {
-    xml += "<entry>";
-    xml += "<" + prop + ">";
-    if (obj[prop] instanceof Array) {
-      for (var array in obj[prop]) {
-        xml += OBJtoXML(new Object(obj[prop][array]));
-      }
-    } else if (typeof obj[prop] == "object") {
-      xml += OBJtoXML(new Object(obj[prop]));
-    } else {
-      xml += obj[prop];
-    }
-    xml += "</" + prop + ">";
-    xml += "</entry>";
-  }
-  xml += "</body>";
-  var xml = xml.replace(/<\/?[0-9]{1,}>/g, "");
-  return xml;
-}

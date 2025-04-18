@@ -9,7 +9,7 @@ const webserver = express();
 
 // статические данные с JS, CSS, HTML
 webserver.use(express.static(__dirname + "/public"));
-webserver.use(express.urlencoded({ extended: true }));
+webserver.use(express.urlencoded({ extended: false }));
 webserver.use(bodyParser.json());
 
 // отдаем html документ
@@ -55,22 +55,23 @@ webserver.post("/stat", function (request, response) {
 webserver.get("/download", function (request, response) {
   try {
     const clientAccept = request.headers.accept;
-    // console.log();
     if (clientAccept === "application/xml") {
+      //отправка заголовка xml
       response.setHeader("Content-Type", "application/xml");
-      const xml = JSON.parse(fs.readFileSync("answer.json", "utf8"));
+      const xml = OBJtoXML(JSON.parse(fs.readFileSync("answer.json", "utf8")));
       response.status(200).send(xml);
     } else if (clientAccept === "application/json") {
+      //отправка заголовка json
       response.setHeader("Content-Type", "application/json");
       response
         .status(200)
         .send(JSON.parse(fs.readFileSync("answer.json", "utf8")));
     } else if (clientAccept === "application/html") {
+      //отправка заголовка html
       response.setHeader("Content-Type", "text/html");
       const json = fs.readFileSync("answer.json", "utf8");
       response.status(200).send(json);
     } else throw new Error("Получение данных завершилось неудачей");
-    fs.closeSync();
   } catch (error) {
     response.status(400).send(`${error}`);
   }
@@ -96,3 +97,26 @@ const escapeHTML = (text) => {
     .join("&#039;");
   return text;
 };
+
+// создает xml для отправки
+function OBJtoXML(obj) {
+  var xml = "<body>";
+  for (var prop in obj) {
+    xml += "<entry>";
+    xml += "<" + prop + ">";
+    if (obj[prop] instanceof Array) {
+      for (var array in obj[prop]) {
+        xml += OBJtoXML(new Object(obj[prop][array]));
+      }
+    } else if (typeof obj[prop] == "object") {
+      xml += OBJtoXML(new Object(obj[prop]));
+    } else {
+      xml += obj[prop];
+    }
+    xml += "</" + prop + ">";
+    xml += "</entry>";
+  }
+  xml += "</body>";
+  var xml = xml.replace(/<\/?[0-9]{1,}>/g, "");
+  return xml;
+}
