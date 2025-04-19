@@ -55,22 +55,22 @@ webserver.post("/stat", function (request, response) {
 webserver.get("/download", function (request, response) {
   try {
     const clientAccept = request.headers.accept;
-    if (clientAccept === "application/xml") {
+    if (clientAccept === "application/json") {
+      //отправка заголовка json
+      response.setHeader("Content-Type", "application/json");
+      const json = JSON.parse(fs.readFileSync("answer.json", "utf8"));
+      response.status(200).send(json);
+    } else if (clientAccept === "application/xml") {
       //отправка заголовка xml
       response.setHeader("Content-Type", "application/xml");
       const xml = OBJtoXML(JSON.parse(fs.readFileSync("answer.json", "utf8")));
       response.status(200).send(xml);
-    } else if (clientAccept === "application/json") {
-      //отправка заголовка json
-      response.setHeader("Content-Type", "application/json");
-      response
-        .status(200)
-        .send(JSON.parse(fs.readFileSync("answer.json", "utf8")));
-    } else if (clientAccept === "application/html") {
+    } else if (clientAccept === "text/html") {
       //отправка заголовка html
       response.setHeader("Content-Type", "text/html");
-      const json = fs.readFileSync("answer.json", "utf8");
-      response.status(200).send(json);
+      const json = JSON.parse(fs.readFileSync("answer.json", "utf8"));
+      const str = objToHtml(json);
+      response.status(200).send(`<body>${str}</body>`);
     } else throw new Error("Получение данных завершилось неудачей");
   } catch (error) {
     response.status(400).send(`${error}`);
@@ -120,3 +120,16 @@ function OBJtoXML(obj) {
   var xml = xml.replace(/<\/?[0-9]{1,}>/g, "");
   return xml;
 }
+
+const objToHtml = (object) => {
+  let html = "";
+  for (const key in object) {
+    if (typeof object[key] == "object") {
+      html += objToHtml(object[key]);
+    } else if (object.hasOwnProperty(key)) {
+      html += "<span>" + key + "   " + "</span>";
+      html += "<span>" + object[key] + "   " + "</span>" + "<br>";
+    }
+  }
+  return html;
+};

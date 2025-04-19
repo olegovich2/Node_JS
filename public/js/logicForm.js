@@ -49,13 +49,12 @@ formDownload.addEventListener("click", (event) => {
     fetchOptions.headers = { Accept: "application/xml" };
     getDataForDownloadXml("/download", fetchOptions);
   } else if (target.tagName === "BUTTON" && target.dataset.button === "html") {
-    fetchOptions.headers = { Accept: "application/html" };
+    fetchOptions.headers = { Accept: "text/html" };
     getDataForDownloadHtml("/download", fetchOptions);
   } else if (target.tagName === "BUTTON" && target.dataset.button === "json") {
     fetchOptions.headers = { Accept: "application/json" };
     getDataForDownloadJson("/download", fetchOptions);
   }
-  formDownload.reset();
 });
 
 //получаем данные для опросника
@@ -102,8 +101,6 @@ async function getDataForDownloadJson(url, fetchOptions) {
   const answer = await fetch(url, fetchOptions)
     .then((response) => {
       if (response.ok) {
-        console.log(response.headers.get("Content-Type"));
-
         if (response.headers.get("Content-Type").includes("application/json")) {
           return response.json();
         } else
