@@ -122,7 +122,7 @@ webserver.post("/variants", function (request, response) {
       response.redirect(302, "/success");
     } else {
       response.setHeader("Access-Control-Allow-Origin", "*");
-      response.status(200).send(`${newPage}`);
+      response.status(200).send(`${newPage.toLowerCase()}`);
     }
   } catch (error) {
     // отправляем текст ошибки
@@ -151,7 +151,7 @@ webserver.get("/success", function (request, response) {
     if (fs.successPage) {
       response.setHeader("Content-Type", "text/html");
       response.setHeader("Cache-Control", "no-store");
-      response.status(302).send(`${fs.successPage}`);
+      response.status(302).send(`${fs.successPage.toLowerCase()}`);
     } else {
       throw new Error("Ничего не нашлось");
     }
