@@ -137,9 +137,8 @@ webserver.get("/error", function (request, response) {
       response.setHeader("Content-Type", "text/html");
       response.setHeader("Cache-Control", "no-store");
       response.status(400).send(`${errorHtml(fs.errorString)}`);
-      delete fs.errorString;
     } else {
-      throw new Error("Список ошибок пуст, вернитесь на главную страницу");
+      throw new Error("Ничего не нашлось");
     }
   } catch (error) {
     fs.errorString = error;
@@ -153,9 +152,8 @@ webserver.get("/success", function (request, response) {
       response.setHeader("Content-Type", "text/html");
       response.setHeader("Cache-Control", "no-store");
       response.status(302).send(`${fs.successPage}`);
-      delete fs.successPage;
     } else {
-      throw new Error("Список ошибок пуст, вернитесь на главную страницу");
+      throw new Error("Ничего не нашлось");
     }
   } catch (error) {
     fs.errorString = error;
