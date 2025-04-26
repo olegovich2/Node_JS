@@ -103,6 +103,11 @@ webserver.post("/variants", function (request, response) {
     // проверка для поля пароль
     if (request.body.password) {
       const passwordString = JSON.stringify(request.body.password);
+      const regularKirillica = /[а-яА-ЯёЁ\s\.\,\!\?\-]/gm;
+      if (regularKirillica.test(passwordString))
+        throw new Error(
+          "В поле пароль нельзя использовать кириллицу. Вернитесь на главную страницу и попробуйте еще раз"
+        );
       if (
         passwordString.includes("<script>") ||
         passwordString.includes("</script>")
