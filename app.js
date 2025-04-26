@@ -117,48 +117,50 @@ webserver.post("/variants", function (request, response) {
     }
     // отправляем страницу
     const newPage = docHtml(request);
-    if (fs.success) {
+    if (typeof newPage === "object") {
       response.setHeader("Access-Control-Allow-Origin", "*");
-      response.redirect(302, "/success");
+      response.redirect(
+        302,
+        `/success?page=${(request.query.page = newPage.page)}`
+      );
     } else {
       response.setHeader("Access-Control-Allow-Origin", "*");
       response.status(200).send(`${newPage}`);
     }
   } catch (error) {
     // отправляем текст ошибки
-    fs.errorString = error;
-    response.redirect(302, "/error");
+    let errorString = errorHtml(error);
+    response.redirect(302, `/error?page=${(request.query.page = errorString)}`);
   }
 });
 
 webserver.get("/error", function (request, response) {
   try {
-    if (fs.errorString) {
+    if (request.query.page) {
       response.setHeader("Content-Type", "text/html");
       response.setHeader("Cache-Control", "no-store");
-      response.status(400).send(`${errorHtml(fs.errorString)}`);
+      response.status(400).send(`${request.query.page.toLowerCase()}`);
     } else {
       throw new Error("Ничего не нашлось");
     }
   } catch (error) {
-    fs.errorString = error;
-    response.redirect(302, "/error");
+    let errorString = errorHtml(error);
+    response.redirect(302, `/error?page=${(request.query.page = errorString)}`);
   }
 });
 
 webserver.get("/success", function (request, response) {
   try {
-    if (fs.successPage) {
+    if (request.query.page) {
       response.setHeader("Content-Type", "text/html");
       response.setHeader("Cache-Control", "no-store");
-      response.status(302).send(`${fs.successPage.toLowerCase()}`);
-      delete fs.success;
+      response.status(302).send(`${request.query.page.toLowerCase()}`);
     } else {
       throw new Error("Ничего не нашлось");
     }
   } catch (error) {
-    fs.errorString = error;
-    response.redirect(302, "/error");
+    let errorString = errorHtml(error);
+    response.redirect(302, `/error?page=${(request.query.page = errorString)}`);
   }
 });
 
@@ -265,11 +267,13 @@ const docHtml = (object) => {
   }
 
   if (resultObject.password === "успех" && resultObject.login === "успех") {
-    let success = objectForCreateDom.htmlSuccess;
-    success = success.replace("$[login]", `${object.body.login}`).toUpperCase();
-    fs.success = "успех";
-    fs.successPage = success;
-    return;
+    const success = {};
+    let successPage = objectForCreateDom.htmlSuccess;
+    success.page = successPage
+      .replace("$[login]", `${object.body.login}`)
+      .toUpperCase();
+    // success.page = successPage;
+    return success;
   }
   return anyconst;
 };
