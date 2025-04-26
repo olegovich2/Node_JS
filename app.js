@@ -121,7 +121,7 @@ webserver.post("/variants", function (request, response) {
       response.setHeader("Access-Control-Allow-Origin", "*");
       response.redirect(
         302,
-        `/success?page=${(request.query.page = newPage.page)}`
+        `/success?login=${(request.query.login = newPage.login)}`
       );
     } else {
       response.setHeader("Access-Control-Allow-Origin", "*");
@@ -129,50 +129,58 @@ webserver.post("/variants", function (request, response) {
     }
   } catch (error) {
     // отправляем текст ошибки
-    let errorString = errorHtml(error);
-    response.redirect(302, `/error?page=${(request.query.page = errorString)}`);
+    response.redirect(
+      302,
+      `/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
   }
 });
 
 webserver.get("/error", function (request, response) {
   try {
-    if (request.query.page) {
+    if (request.query.errorMessage) {
       response.setHeader("Content-Type", "text/html");
       response.setHeader("Cache-Control", "no-store");
-      response.status(400).send(`${request.query.page.toLowerCase()}`);
+      // создание html ошибки
+      let errorPage = objectForCreateDom.htmlError;
+      errorPage = errorPage.replace(
+        "$[status]",
+        `${request.query.errorMessage}`
+      );
+      response.status(400).send(`${errorPage}`);
     } else {
       throw new Error("Ничего не нашлось");
     }
   } catch (error) {
-    let errorString = errorHtml(error);
-    response.redirect(302, `/error?page=${(request.query.page = errorString)}`);
+    response.redirect(
+      302,
+      `/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
   }
 });
 
 webserver.get("/success", function (request, response) {
   try {
-    if (request.query.page) {
+    if (request.query.login) {
       response.setHeader("Content-Type", "text/html");
       response.setHeader("Cache-Control", "no-store");
-      response.status(302).send(`${request.query.page.toLowerCase()}`);
+      // создание html успеха
+      let successPage = objectForCreateDom.htmlSuccess;
+      successPage = successPage.replace("$[login]", `${request.query.login}`);
+      response.status(302).send(`${successPage}`);
     } else {
       throw new Error("Ничего не нашлось");
     }
   } catch (error) {
-    let errorString = errorHtml(error);
-    response.redirect(302, `/error?page=${(request.query.page = errorString)}`);
+    response.redirect(
+      302,
+      `/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
   }
 });
 
 // начинаем прослушивать подключения на 7681 порту
 webserver.listen(7681);
-
-// создание html ошибки
-const errorHtml = (string) => {
-  let errorString = objectForCreateDom.htmlError;
-  errorString = errorString.replace("$[status]", string);
-  return errorString;
-};
 
 // функция создания html документа
 const docHtml = (object) => {
@@ -268,11 +276,7 @@ const docHtml = (object) => {
 
   if (resultObject.password === "успех" && resultObject.login === "успех") {
     const success = {};
-    let successPage = objectForCreateDom.htmlSuccess;
-    success.page = successPage
-      .replace("$[login]", `${object.body.login}`)
-      .toUpperCase();
-    // success.page = successPage;
+    success.login = object.body.login;
     return success;
   }
   return anyconst;
