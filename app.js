@@ -68,6 +68,37 @@ const objectForCreateDom = {
 </body>
 </html>`,
 };
+
+// объект с ошибками
+const objectError = {
+  scriptNone: "Нельзя заполнять поле скриптом!",
+  loginwrongSymbol: "Поле логин содержит недопустимые символы",
+  passwordWrongSymbol: "Поле пароль содержит недопустимые символы",
+  errorUndefined: "Ничего не нашлось",
+  loginNull: "В поле логин ничего нет, введине логин",
+  loginShort: "Логин слишком короткий",
+  loginLonger: "Логин слишком длинный",
+  passwordNull: "В поле пароль ничего нет, введине пароль",
+  passwordKirillica: "В поле пароль нельзя использовать кириллицу",
+  passwordShort: "Пароль слишком короткий",
+  passwordLonger: "Пароль слишком длинный",
+  passwordSimple: "Пароль простой",
+  passwordMedium: "Пароль средний",
+  passwordHard: "Пароль сложный",
+};
+
+// объект с классами
+const objectCss = {
+  errors: "errors",
+  errorParagraf: "error_p",
+  empty: "",
+  success: "success",
+  successParagraf: "success_p",
+  simply: "simply",
+  simplyParagraf: "simply_p",
+  medium: "medium",
+  mediumParagraf: "medium_p",
+};
 // создаем объект приложения
 const webserver = express();
 
@@ -91,34 +122,29 @@ webserver.post("/variants", function (request, response) {
     if (request.body.login) {
       const loginString = JSON.stringify(request.body.login);
       if (loginString.includes("<script>") || loginString.includes("</script>"))
-        throw new Error("Нельзя заполнять поле скриптом!");
+        throw new Error(objectError.scriptNone);
       if (
         loginString.includes("<") ||
         loginString.includes(">") ||
         loginString.includes("/") ||
         loginString.includes("&")
       )
-        throw new Error("Поле логин содержит недопустимые символы");
+        throw new Error(objectError.loginwrongSymbol);
     }
     // проверка для поля пароль
     if (request.body.password) {
       const passwordString = JSON.stringify(request.body.password);
-      const regularKirillica = /[а-яА-ЯёЁ\s\.\,\!\?\-]/gm;
-      if (regularKirillica.test(passwordString))
-        throw new Error(
-          "В поле пароль нельзя использовать кириллицу. Вернитесь на главную страницу и попробуйте еще раз"
-        );
       if (
         passwordString.includes("<script>") ||
         passwordString.includes("</script>")
       )
-        throw new Error("Нельзя заполнять поле скриптом!");
+        throw new Error(objectError.scriptNone);
       if (
         passwordString.includes("<") ||
         passwordString.includes(">") ||
         passwordString.includes(" ")
       )
-        throw new Error("Поле пароль содержит недопустимые символы");
+        throw new Error(objectError.passwordWrongSymbol);
     }
     // отправляем страницу
     const newPage = docHtml(request);
@@ -154,7 +180,7 @@ webserver.get("/error", function (request, response) {
       );
       response.status(400).send(`${errorPage}`);
     } else {
-      throw new Error("Ничего не нашлось");
+      throw new Error(objectError.errorUndefined);
     }
   } catch (error) {
     response.redirect(
@@ -174,7 +200,7 @@ webserver.get("/success", function (request, response) {
       successPage = successPage.replace("$[login]", `${request.query.login}`);
       response.status(302).send(`${successPage}`);
     } else {
-      throw new Error("Ничего не нашлось");
+      throw new Error(objectError.errorUndefined);
     }
   } catch (error) {
     response.redirect(
@@ -190,67 +216,73 @@ webserver.listen(7681);
 // функция создания html документа
 const docHtml = (object) => {
   const resultObject = {};
+  const regularKirillica = /[а-яА-ЯёЁ\s\.\,\!\?\-]/gm;
   let anyconst = objectForCreateDom.htmlNew;
   // проверка логина на длину
   if (!object.body.login || object.body.login.length === 0) {
-    anyconst = anyconst.replace("$[inputClassLogin]", "errors");
-    anyconst = anyconst.replace("$[login]", "");
-    anyconst = anyconst.replace("$[classPLogin]", "error_p");
-    anyconst = anyconst.replace(
-      "$[textPErrorLogin]",
-      "В поле логин ничего нет, введине логин"
-    );
+    anyconst = anyconst.replace("$[inputClassLogin]", objectCss.errors);
+    anyconst = anyconst.replace("$[login]", objectCss.empty);
+    anyconst = anyconst.replace("$[classPLogin]", objectCss.errorParagraf);
+    anyconst = anyconst.replace("$[textPErrorLogin]", objectError.loginNull);
   } else if (object.body.login.length !== 0 && object.body.login.length < 4) {
-    anyconst = anyconst.replace("$[inputClassLogin]", "errors");
+    anyconst = anyconst.replace("$[inputClassLogin]", objectCss.errors);
     anyconst = anyconst.replace("$[login]", `${object.body.login}`);
-    anyconst = anyconst.replace("$[classPLogin]", "error_p");
-    anyconst = anyconst.replace("$[textPErrorLogin]", "Логин слишком короткий");
+    anyconst = anyconst.replace("$[classPLogin]", objectCss.errorParagraf);
+    anyconst = anyconst.replace("$[textPErrorLogin]", objectError.loginShort);
   } else if (object.body.login.length !== 0 && object.body.login.length > 20) {
-    anyconst = anyconst.replace("$[inputClassLogin]", "errors");
+    anyconst = anyconst.replace("$[inputClassLogin]", objectCss.errors);
     anyconst = anyconst.replace("$[login]", `${object.body.login}`);
-    anyconst = anyconst.replace("$[classPLogin]", "error_p");
-    anyconst = anyconst.replace("$[textPErrorLogin]", "Логин слишком длинный");
+    anyconst = anyconst.replace("$[classPLogin]", objectCss.errorParagraf);
+    anyconst = anyconst.replace("$[textPErrorLogin]", objectError.loginLonger);
   } else if (
     object.body.login.length !== 0 &&
     object.body.login.length >= 4 &&
     object.body.login.length <= 20
   ) {
-    anyconst = anyconst.replace("$[inputClassLogin]", "success");
+    anyconst = anyconst.replace("$[inputClassLogin]", objectCss.success);
     anyconst = anyconst.replace("$[login]", `${object.body.login}`);
-    anyconst = anyconst.replace("$[classPLogin]", "");
-    anyconst = anyconst.replace("$[textPErrorLogin]", "");
+    anyconst = anyconst.replace("$[classPLogin]", objectCss.empty);
+    anyconst = anyconst.replace("$[textPErrorLogin]", objectCss.empty);
     resultObject.login = "успех";
   }
   // проверка пароля на длину
   if (!object.body.password || object.body.password.length === 0) {
-    anyconst = anyconst.replace("$[inputClassPassword]", "errors");
-    anyconst = anyconst.replace("$[password]", "");
-    anyconst = anyconst.replace("$[classPPassword]", "error_p");
+    anyconst = anyconst.replace("$[inputClassPassword]", objectCss.errors);
+    anyconst = anyconst.replace("$[password]", objectCss.empty);
+    anyconst = anyconst.replace("$[classPPassword]", objectCss.errorParagraf);
     anyconst = anyconst.replace(
       "$[textPErrorPassword]",
-      "В поле пароль ничего нет, введите пароль"
+      objectError.passwordNull
     );
-  } else if (
-    object.body.password.length !== 0 &&
-    object.body.password.length <= 4
-  ) {
-    anyconst = anyconst.replace("$[inputClassPassword]", "errors");
+  } else if (regularKirillica.test(object.body.password)) {
+    anyconst = anyconst.replace("$[inputClassPassword]", objectCss.errors);
     anyconst = anyconst.replace("$[password]", `${object.body.password}`);
-    anyconst = anyconst.replace("$[classPPassword]", "error_p");
+    anyconst = anyconst.replace("$[classPPassword]", objectCss.errorParagraf);
     anyconst = anyconst.replace(
       "$[textPErrorPassword]",
-      "Пароль слишком короткий"
+      objectError.passwordKirillica
     );
   } else if (
     object.body.password.length !== 0 &&
     object.body.password.length > 15
   ) {
-    anyconst = anyconst.replace("$[inputClassPassword]", "errors");
+    anyconst = anyconst.replace("$[inputClassPassword]", objectCss.errors);
     anyconst = anyconst.replace("$[password]", `${object.body.password}`);
-    anyconst = anyconst.replace("$[classPPassword]", "error_p");
+    anyconst = anyconst.replace("$[classPPassword]", objectCss.errorParagraf);
     anyconst = anyconst.replace(
       "$[textPErrorPassword]",
-      "Пароль слишком длинный"
+      objectError.passwordLonger
+    );
+  } else if (
+    object.body.password.length !== 0 &&
+    object.body.password.length <= 4
+  ) {
+    anyconst = anyconst.replace("$[inputClassPassword]", objectCss.errors);
+    anyconst = anyconst.replace("$[password]", `${object.body.password}`);
+    anyconst = anyconst.replace("$[classPPassword]", objectCss.errorParagraf);
+    anyconst = anyconst.replace(
+      "$[textPErrorPassword]",
+      objectError.passwordShort
     );
   } else if (
     object.body.password.length !== 0 &&
@@ -258,23 +290,41 @@ const docHtml = (object) => {
     object.body.password.length <= 15
   ) {
     if (checkPasswords(object.body.password) === "Простой") {
-      anyconst = anyconst.replace("$[inputClassPassword]", "simply");
+      anyconst = anyconst.replace("$[inputClassPassword]", objectCss.simply);
       anyconst = anyconst.replace("$[password]", `${object.body.password}`);
-      anyconst = anyconst.replace("$[classPPassword]", "simly_p");
-      anyconst = anyconst.replace("$[textPErrorPassword]", "Пароль простой");
+      anyconst = anyconst.replace(
+        "$[classPPassword]",
+        objectCss.simplyParagraf
+      );
+      anyconst = anyconst.replace(
+        "$[textPErrorPassword]",
+        objectError.passwordSimple
+      );
     }
     if (checkPasswords(object.body.password) === "Средний") {
-      anyconst = anyconst.replace("$[inputClassPassword]", "medium");
+      anyconst = anyconst.replace("$[inputClassPassword]", objectCss.medium);
       anyconst = anyconst.replace("$[password]", `${object.body.password}`);
-      anyconst = anyconst.replace("$[classPPassword]", "medium_p");
-      anyconst = anyconst.replace("$[textPErrorPassword]", "Пароль средний");
+      anyconst = anyconst.replace(
+        "$[classPPassword]",
+        objectCss.mediumParagraf
+      );
+      anyconst = anyconst.replace(
+        "$[textPErrorPassword]",
+        objectError.passwordMedium
+      );
       resultObject.password = "успех";
     }
     if (checkPasswords(object.body.password) === "Сложный") {
-      anyconst = anyconst.replace("$[inputClassPassword]", "success");
+      anyconst = anyconst.replace("$[inputClassPassword]", objectCss.success);
       anyconst = anyconst.replace("$[password]", `${object.body.password}`);
-      anyconst = anyconst.replace("$[classPPassword]", "success_p");
-      anyconst = anyconst.replace("$[textPErrorPassword]", "Пароль сложный");
+      anyconst = anyconst.replace(
+        "$[classPPassword]",
+        objectCss.successParagraf
+      );
+      anyconst = anyconst.replace(
+        "$[textPErrorPassword]",
+        objectError.passwordHard
+      );
       resultObject.password = "успех";
     }
   }
