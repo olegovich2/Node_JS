@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Form with Express</title>
+    <link href="/css/style.css" type="text/css" rel="stylesheet" />
+</head>
+
+<body>
+    <div>
+        <h3>Заполните данные полей:</h3>
+        <form method="post" action="/variants" target="_self" data-form="transition">            
+            <div class="fields">
+                <p>Введите ваш логин:</p>
+                <input class="input" type="text" placeholder="Введите ваш логин" name="login">
+            </div>
+            <div class="fields">
+                <p>Введите ваш пароль:</p>
+                <input class="input" type="text" placeholder="Введите ваш пароль" name="password">
+            </div>
+            <button type="submit">Отправить</button>
+        </form>
+    </div>
+</body>
+
+</html>
