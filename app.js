@@ -178,7 +178,7 @@ webserver.get("/error", function (request, response) {
         "$[status]",
         `${request.query.errorMessage}`
       );
-      response.status(400).send(`${errorPage}`);
+      response.status(200).send(`${errorPage}`);
     } else {
       throw new Error(objectError.errorUndefined);
     }
@@ -198,7 +198,7 @@ webserver.get("/success", function (request, response) {
       // создание html успеха
       let successPage = objectForCreateDom.htmlSuccess;
       successPage = successPage.replace("$[login]", `${request.query.login}`);
-      response.status(302).send(`${successPage}`);
+      response.status(200).send(`${successPage}`);
     } else {
       throw new Error(objectError.errorUndefined);
     }
