@@ -79,18 +79,61 @@ webserver.post("/dataForFetch", async function (request, response) {
     else {
       const object = {};
       const headers = {};
-      const proxy_response = await fetch(
-        `${request.body.url}?${request.body.params}`
-      );
-      const proxy_text = await proxy_response.text();
-      object.status = proxy_response.status;
-      for (header of proxy_response.headers) {
-        headers[header[0]] = header[1];
+      const options = {};
+      options.redirect = "manual";
+      let url = `${request.body.url}?${request.body.params}`;
+      if (request.body.method !== "GET") {
+        options.method = request.body.method;
+        options.headers = request.body.headers;
+        options.body = request.body.textareaBodyRequest;
+      } else {
+        options.method = request.body.method;
+        options.headers = request.body.headers;
       }
-      object.headers = headers;
-      object.body = proxy_response.body;
-      object.page = bytesToBase64(new TextEncoder().encode(proxy_text));
-      response.status(200).send(`${JSON.stringify(object)}`);
+      if (
+        request.body.url.includes(".png") ||
+        request.body.url.includes(".jpg") ||
+        request.body.url.includes(".jpeg") ||
+        request.body.url.includes(".gif")
+      ) {
+        const proxy_response = await fetch(url, options);
+        if (proxy_response.ok) {
+          const proxy_blob = await proxy_response.blob();
+          object.image = "";
+          const str = Buffer.from(await proxy_blob.arrayBuffer()).toString(
+            "base64"
+          );
+          object.page = str;
+          object.status = proxy_response.status;
+          for (header of proxy_response.headers) {
+            headers[header[0]] = header[1];
+          }
+          object.headers = headers;
+          object.body = proxy_response.body;
+          response.status(200).send(`${JSON.stringify(object)}`);
+        } else {
+          const proxy_text = await proxy_response.text();
+          object.page = proxy_text;
+          object.status = proxy_response.status;
+          for (header of proxy_response.headers) {
+            headers[header[0]] = header[1];
+          }
+          object.headers = headers;
+          object.body = proxy_response.body;
+          response.status(200).send(`${JSON.stringify(object)}`);
+        }
+      } else {
+        const proxy_response = await fetch(url, options);
+        const proxy_text = await proxy_response.text();
+        object.page = proxy_text;
+        object.status = proxy_response.status;
+        for (header of proxy_response.headers) {
+          headers[header[0]] = header[1];
+        }
+        object.headers = headers;
+        object.body = proxy_response.body;
+        response.status(200).send(`${JSON.stringify(object)}`);
+      }
     }
   } catch (error) {
     // отправляем текст ошибки
@@ -169,8 +212,3 @@ const escapeHTML = (text) => {
     .join("&#039;");
   return text;
 };
-
-function bytesToBase64(bytes) {
-  const binString = String.fromCodePoint(...bytes);
-  return btoa(binString);
-}

@@ -19,6 +19,11 @@ body {
     background-color: rgb(224, 220, 206);
 }
 
+.formOne {
+    width: 100%;
+    height: max-content;
+}
+
 .selectWithUrl {
     display: grid;
     grid-template-columns: 80px 1fr;
@@ -94,9 +99,10 @@ body {
 .formWithResult {
     display: grid;
     grid-template-rows: 1fr 1fr;
-    gap: 10px;
+    gap: 0;
     margin: 0;
     padding: 0;
+    width: 100%;
 }
 
 .unvisible {
@@ -153,10 +159,16 @@ body {
 }
 
 .template_buttons button {
-    border: none;
-    background-color: transparent;
-    font-size: 12px;
-    margin: 5px;
+    background-color: rgba(83, 81, 81, 0.345);
+    color: rgb(2, 253, 157);
+    border-radius: 20px;
+}
+
+.template_buttons button:hover,
+.template_buttons button:active,
+.butt:hover,
+.butt:active {
+    color: aliceblue;
 }
 
 .red {
@@ -191,6 +203,42 @@ body {
 }
 
 @media screen and (max-width: 920px) {
+    .base {
+        display: inherit;
+        grid-template-rows: 1fr 1fr;
+        gap: 10px;
+        margin: 5px;
+        padding: 0;
+    }
+
+    input[type=url],
+    textarea {
+        width: 95%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .module_params,
+    .module_headers,
+    .params,
+    .headers,
+    .add_params,
+    .add_headers,
+    .paragrafWithUrl,
+    .selectWithUrl {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .new_div {
+        display: inherit;
+        grid-template-columns: 1fr 1fr 80px;
+        gap: 0;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+    }
     p {
         font-size: 16px;
     }
@@ -230,15 +278,44 @@ body {
     }
 }
 
-@media screen and (max-width: 280px) {
+@media screen and (max-width: 450px) {
 
-    .base {
+    .base,
+    .gridOrient,
+    .selectWithUrl {
         display: inherit;
         grid-template-rows: 1fr 1fr;
         gap: 0;
-        margin: 5px;
+        margin: 0;
         padding: 0;
+        width: 100%;
     }
+
+.gridOrient {
+    border: 3px solid black;
+}
+
+    .template_buttons {
+        display: inherit;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0;
+        margin: 0;
+        padding: 0;
+    } 
+
+    .template_buttons button {
+        background-color: rgba(83, 81, 81, 0.345);
+        color: rgb(2, 253, 157);
+        border-radius: 20px;
+    }
+
+.module_buttons {
+    display: inherit;
+        grid-template-rows: 1fr 1fr 1fr;
+        gap: 0;
+        margin: 0;
+        padding: 0;
+}
 
     .field_for_form {
         margin-top: 10px;
@@ -254,5 +331,6 @@ body {
 
     .butt {
         font-size: 12px;
+        margin: 5px;
     }
 }

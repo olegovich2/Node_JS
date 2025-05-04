@@ -2,6 +2,9 @@ import {
   clearAndGenerateMarkers,
   dataEntryInFormFromDB,
   createResult,
+  resultFromServer,
+  formOne,
+  divFieldMarker,
 } from "./createElementsInForm.js";
 
 export async function getDataForMarkerField(url) {
@@ -12,6 +15,7 @@ export async function getDataForMarkerField(url) {
     })
     .then((result) => {
       clearAndGenerateMarkers(result);
+      divFieldMarker.scrollIntoView({ block: "start", inline: "nearest" });
     })
     .catch((error) => {
       console.error(error);
@@ -51,6 +55,7 @@ export async function getDataForForm(url, data) {
     })
     .then((result) => {
       dataEntryInFormFromDB(result);
+      formOne.scrollIntoView({ block: "start", inline: "nearest" });
     })
     .catch((error) => {
       console.error(error);
@@ -90,6 +95,7 @@ export async function postDataForFetchApi(url, data) {
     })
     .then((result) => {
       createResult(result);
+      resultFromServer.scrollIntoView({ block: "start", inline: "nearest" });
     })
     .catch((error) => {
       console.error(error);

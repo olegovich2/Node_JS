@@ -12,18 +12,19 @@ const headersValue =
   'Content-Disposition: form-data; name="MessageTitle", Accept-Charset: utf-8, Accept: text/plain и тд';
 const regularKirillica = /[а-яА-ЯёЁ\s\.\,\!\?]/gm;
 let compare = "";
-const formOne = document.querySelector('[data-form="formOne"]');
+export const formOne = document.querySelector('[data-form="formOne"]');
 const divHeadersField = document.querySelector('[data-div="headers"]');
 const divParamsField = document.querySelector('[data-div="params"]');
 const divBodyRequest = document.querySelector('[data-div="bodyRequest"]');
 const divModuleParams = document.querySelector('[data-div="module_params"]');
-const divFieldMarker = document.querySelector('[data-div="field_marker"]');
+export const divFieldMarker = document.querySelector(
+  '[data-div="field_marker"]'
+);
 const buttonSave = formOne.querySelector('[data-button="save_request"]');
-const resultFromServer = document.querySelector('[data-div="result"]');
+export const resultFromServer = document.querySelector('[data-div="result"]');
 
 export const handleFormForRequests = (event) => {
   event.preventDefault();
-  console.log(event.target.dataset.button);
   const selectValue = formOne.querySelector(
     '[data-select="selectMethod"]'
   ).value;
@@ -52,11 +53,9 @@ export const handleFormForRequests = (event) => {
     }
   }
   if (event.target.dataset.button === "send_request") {
-    console.log("отправить запрос");
     const gap = searchMalware();
     if (gap) {
       const data = createDataForSendApi();
-      console.log(data);
       postDataForFetchApi("/dataForFetch", JSON.stringify(data));
     }
   }
@@ -289,8 +288,6 @@ export const clearAndGenerateMarkers = (object) => {
 
 export const manualControlFieldMarker = (event) => {
   event.preventDefault();
-  console.log(event.target);
-  console.log(event.currentTarget);
   if (event.target.dataset.button === "edit_marker") {
     const object = {};
     object.id = event.target.dataset.id;
@@ -381,7 +378,6 @@ export const dataEntryInFormFromDB = (object) => {
 
 export const createResult = (object) => {
   resultFromServer.innerHTML = "";
-  console.log(object);
   const hContent = document.createElement("h3");
   hContent.textContent = "Статус:";
   const pStatus = document.createElement("p");
@@ -417,32 +413,23 @@ export const createResult = (object) => {
   const previewAnswerContent = document.createElement("h4");
   previewAnswerContent.textContent = "Preview:";
   resultFromServer.append(previewAnswerContent);
-  if (
-    object.headers["content-type"] === "image/png" ||
-    object.headers["content-type"] === "image/gif" ||
-    object.headers["content-type"] === "image/jpg" ||
-    object.headers["content-type"] === "image/jpeg"
-  ) {
-    console.log("img");
+  if (object.hasOwnProperty("image")) {
     const img = document.createElement("img");
-    urldecode(object.page);
-    async function urldecode(x) {
-      const url = await fetch(`data:image/png;base64,${x}`)
-        .then((response) => {
-          if (response.ok) return response.blob();
-          else throw new Error("Получение данных завершилось неудачей");
-        })
-        .then((result) => {
-          console.log(result);
-          img.src = URL.createObjectURL(result);
-          img.title = `здесь должен быть title`;
-          resultFromServer.appendChild(img);
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-      return url;
+    img.setAttribute("height", "150px");
+    img.setAttribute("width", "150px");
+    let base64String = `data:image/png;base64,${object.page}`;
+    const base64Data = base64String.split(",")[1];
+    const binaryString = window.atob(base64Data);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
     }
+    const blob = new Blob([bytes], { type: "image/png" });
+    const url = URL.createObjectURL(blob);
+    img.src = url;
+    resultFromServer.appendChild(img);
+    URL.revokeObjectURL(blob);
   } else {
     const previewAnswerContainer = document.createElement("textarea");
     previewAnswerContainer.setAttribute("rows", "5");
