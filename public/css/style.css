@@ -1,0 +1,336 @@
+body {
+    padding: 0;
+    margin: 0;
+}
+
+.base {
+    display: grid;
+    grid-template-columns: 49% 49%;
+    gap: 1%;
+    margin: 5px;
+    padding: 0;
+}
+
+.field_marker {
+    background-color: rgb(222, 163, 0);
+}
+
+.field_for_form {
+    background-color: rgb(224, 220, 206);
+}
+
+.formOne {
+    width: 100%;
+    height: max-content;
+}
+
+.selectWithUrl {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 30px;
+    margin: 0;
+    padding: 0;
+}
+
+.paragrafWithSelect,
+.paragrafWithUrl,
+.bodyRequest,
+.module_params,
+.module_headers,
+.params,
+.headers {
+    display: grid;
+    grid-template-rows: 1fr;
+    gap: 5px;
+    margin: 5px;
+    padding: 0;
+}
+
+.paragrafWithSelect p,
+.paragrafWithUrl p,
+.module_params p,
+.module_headers p,
+.bodyRequest p {
+    font-size: 20px;
+    margin: 0;
+    padding: 0;
+}
+
+.add_params,
+.add_headers {
+    border: none;
+    background-color: transparent;
+    color: green;
+    font-size: 14px;
+}
+
+.new_div {
+    display: grid;
+    grid-template-columns: 1fr 1fr 80px;
+    gap: 2%;
+    margin: 0;
+    padding: 0;
+}
+
+.delete_headers {
+    border: none;
+    background-color: transparent;
+    color: red;
+    font-size: 14px;
+}
+
+.module_buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin: 5px;
+    padding: 0;
+}
+
+.butt {
+    border: none;
+    background-color: rgb(0, 153, 255);
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bolder;
+    height: 30px;
+}
+
+.formWithResult {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.unvisible {
+    display: none;
+}
+
+.error {
+    background-color: rgb(227, 119, 119);
+}
+
+.result {
+    margin: 0;
+    padding: 0;
+
+}
+
+.result h3,
+.result h4,
+.result p {
+    margin: 5px 0;
+    padding: 0;
+    font-size: 12px;
+    word-wrap: break-all;
+}
+
+.gridOrient {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 5px;
+    padding: 0;
+}
+
+.template_p {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+}
+
+.template_p p {
+    margin: 5px;
+    padding: 0;
+    font-size: 12px;
+}
+
+.template_buttons {
+    display: grid;
+    grid-template-rows: 1fr 1fr 1fr;
+    gap: 5px;
+    margin: 0;
+    padding: 0;
+}
+
+.template_buttons button {
+    background-color: rgba(83, 81, 81, 0.345);
+    color: rgb(2, 253, 157);
+    border-radius: 20px;
+}
+
+.template_buttons button:hover,
+.template_buttons button:active,
+.butt:hover,
+.butt:active {
+    color: aliceblue;
+}
+
+.red {
+    background-color: rgb(204, 91, 91);
+}
+
+.blue {
+    background-color: rgb(77, 158, 215);
+}
+
+.green {
+    background-color: rgb(88, 193, 43);
+}
+
+.violet {
+    background-color: rgb(212, 129, 231);
+}
+
+.white {
+    background-color: rgb(230, 228, 228);
+}
+
+.grey {
+    background-color: rgb(162, 157, 157);
+}
+
+@media screen and (max-width: 1035px) {
+
+    .butt {
+        font-size: 13px;
+    }
+}
+
+@media screen and (max-width: 920px) {
+    .base {
+        display: inherit;
+        grid-template-rows: 1fr 1fr;
+        gap: 10px;
+        margin: 5px;
+        padding: 0;
+    }
+
+    input[type=url],
+    textarea {
+        width: 95%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .module_params,
+    .module_headers,
+    .params,
+    .headers,
+    .add_params,
+    .add_headers,
+    .paragrafWithUrl,
+    .selectWithUrl {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .new_div {
+        display: inherit;
+        grid-template-columns: 1fr 1fr 80px;
+        gap: 0;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+    }
+    p {
+        font-size: 16px;
+    }
+
+    .field_for_form {
+        margin-top: 10px;
+    }
+
+    .butt {
+        font-size: 12px;
+    }
+}
+
+@media screen and (max-width: 770px) {
+    .base {
+        display: inherit;
+        grid-template-rows: 1fr 1fr;
+        gap: 10px;
+        margin: 5px;
+        padding: 0;
+    }
+
+    .field_for_form {
+        margin-top: 10px;
+    }
+
+    .new_div {
+        display: inherit;
+        grid-template-columns: 1fr 1fr 80px;
+        gap: 0;
+        margin: 0;
+        padding: 0;
+    }
+
+    .butt {
+        font-size: 12px;
+    }
+}
+
+@media screen and (max-width: 450px) {
+
+    .base,
+    .gridOrient,
+    .selectWithUrl {
+        display: inherit;
+        grid-template-rows: 1fr 1fr;
+        gap: 0;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+    }
+
+.gridOrient {
+    border: 3px solid black;
+}
+
+    .template_buttons {
+        display: inherit;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0;
+        margin: 0;
+        padding: 0;
+    } 
+
+    .template_buttons button {
+        background-color: rgba(83, 81, 81, 0.345);
+        color: rgb(2, 253, 157);
+        border-radius: 20px;
+    }
+
+.module_buttons {
+    display: inherit;
+        grid-template-rows: 1fr 1fr 1fr;
+        gap: 0;
+        margin: 0;
+        padding: 0;
+}
+
+    .field_for_form {
+        margin-top: 10px;
+    }
+
+    .new_div {
+        display: inherit;
+        grid-template-columns: 80px 80px 80px;
+        gap: 0;
+        margin: 0;
+        padding: 0;
+    }
+
+    .butt {
+        font-size: 12px;
+        margin: 5px;
+    }
+}
