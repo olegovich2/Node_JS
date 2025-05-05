@@ -109,7 +109,7 @@ webserver.post("/dataForFetch", async function (request, response) {
             headers[header[0]] = header[1];
           }
           object.headers = headers;
-          object.body = proxy_response.body;
+          object.body = str;
           response.status(200).send(`${JSON.stringify(object)}`);
         } else {
           const proxy_text = await proxy_response.text();
@@ -119,7 +119,7 @@ webserver.post("/dataForFetch", async function (request, response) {
             headers[header[0]] = header[1];
           }
           object.headers = headers;
-          object.body = proxy_response.body;
+          object.body = proxy_text;
           response.status(200).send(`${JSON.stringify(object)}`);
         }
       } else {
@@ -131,7 +131,7 @@ webserver.post("/dataForFetch", async function (request, response) {
           headers[header[0]] = header[1];
         }
         object.headers = headers;
-        object.body = proxy_response.body;
+        object.body = proxy_text;
         response.status(200).send(`${JSON.stringify(object)}`);
       }
     }
