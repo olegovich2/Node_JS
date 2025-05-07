@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Similarity Postman</title>
+    <link href="/css/style.css" type="text/css" rel="stylesheet" />
+</head>
+
+<body>
+    <div class="base" data-div="base">
+        <div class="field_marker" data-div="field_marker"></div>
+        <div class="field_for_form" data-div="field_for_form">
+            <div class="formWithResult">
+                <form class="formOne" data-form="formOne">
+                    <div class="selectWithUrl" data-div="selectWithUrl">
+                        <div class="paragrafWithSelect">
+                            <p>Метод</p>
+                            <select name="method" data-select="selectMethod">
+                                <option selected value=""></option>
+                                <option value="GET">GET</option>
+                                <option value="POST">POST</option>
+                                <option value="PATCH">PATCH</option>
+                                <option value="UPDATE">UPDATE</option>
+                                <option value="OPTIONS">OPTIONS</option>
+                            </select>
+                        </div>
+                        <div class="paragrafWithUrl">
+                            <p>URL</p>
+                            <input type="url" name="urlFromForm" placeholder="Введите URL">
+                        </div>
+                    </div>
+                    <div class="bodyRequest unvisible" data-div="bodyRequest">
+                        <p>Тело запроса</p>
+                        <textarea name="textareaBodyRequest" rows="4" placeholder="Введите тело запроса"></textarea>
+                    </div>
+                    <div class="module_params" data-div="module_params">
+                        <p>Параметры</p>
+                        <div class="params" data-div="params"></div>
+                        <button class="add_params" type="button" data-button="add_params">Добавить параметр</button>
+                    </div>
+                    <div class="module_headers" data-div="module_headers">
+                        <p>Заголовки</p>
+                        <div class="headers" data-div="headers"></div>
+                        <button class="add_headers" type="button" data-button="add_headers">Добавить заголовок</button>
+                    </div>
+                    <div class="module_buttons">
+                        <button class="butt" type="button" data-button="save_request" data-original-key>Сохранить запрос</button>
+                        <button class="butt" type="button" data-button="send_request">Отправить запрос</button>
+                        <button class="butt" type="button" data-button="clear_form">Очистить форму</button>
+                    </div>
+                </form>
+                <div class="result" data-div="result"></div>
+            </div>
+        </div>
+    </div>    
+</body>
+
+<script type="module" src="/js/createElementsInForm.js"></script>
+<script type="module" src="/js/requests.js"></script>
+</html>
