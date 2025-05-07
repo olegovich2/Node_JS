@@ -1,0 +1,21 @@
+{{#each marker}}
+ {{#if this.isLogic}}
+                <div class="gridOrient {{this.class}}" data-id="{{this.key}}">
+            <div class="template_p">
+                <p data-p="method">{{this.method}}</p>
+                <p data-p="url">{{this.url}}</p>
+            </div>
+            <div class="template_buttons">
+                <button type="button" data-button="edit_marker" data-id="{{this.key}}">Редактировать</button>
+                <button type="button" data-button="open_marker" data-id="{{this.key}}">Открыть</button>
+                <button type="button" data-button="delete_marker" data-id="{{this.key}}">Удалить</button>
+            </div>
+        </div>
+            {{else}}  
+                
+            {{/if}}
+            
+        {{/each}}
+    
+
+ 

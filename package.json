@@ -1,0 +1,12 @@
+{
+    "name": "helloapp",
+    "version": "1.0.0",
+    "dependencies": {
+        "body-parser": "^2.2.0",
+        "exphbs": "^1.2.0",
+        "express": "^5.1.0",
+        "express-handlebars": "^8.0.3",
+        "helmet": "^8.1.0",
+        "isomorphic-fetch": "^3.0.0"
+    }
+}
