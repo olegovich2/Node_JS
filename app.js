@@ -3,6 +3,11 @@ const os = require("os");
 const fs = require("fs");
 const zlib = require("zlib"); // Для сжатия
 const readlineSync = require("readline-sync"); // Для введения в консоли пользователем
+const questionMessagesMap = {
+  c: "Enter the path of the file or folder to compress files: ",
+  d: "Enter the path of the file or folder to decompress archives: ",
+  del: "Enter the path of the file or folder to delete archives: ",
+};
 
 // шлюз, необходим для последовательного отображения проделанной работы в терминале, регулирует работу функций ожидания
 let gateway = true;
@@ -14,74 +19,42 @@ const funcAutoCompressor = () => {
   const choice = readlineSync.question(
     `Do you want to (c)ompress files, or (d)ecompress or (del)ete archives?`
   );
-  if (choice.toLowerCase() === "c") {
-    questionPath(platform, choice.toLowerCase());
-  } else if (choice.toLowerCase() === "d") {
-    questionPath(platform, choice.toLowerCase());
-  } else if (choice.toLowerCase() === "del") {
-    questionPath(platform, choice.toLowerCase());
+  const choicedSymbol = choice.toLowerCase();
+  if (["c", "d", "del"].includes(choicedSymbol)) {
+    questionPath(platform, choicedSymbol);
   } else {
     console.log('Invalid choice. Please enter "c", "d" or "del".');
     funcAutoCompressor();
   }
 };
 
+const someCommonFunction = (path, param) => {
+  fs.stat(path, function (err, stat) {
+    if (err) {
+      console.log(
+        `That file doesn't exist. Please check the path and try again.   `
+      );
+      return funcAutoCompressor();
+    }
+    if (param === "c") getFilesPr(path);
+    else deleteOrDecompressFilesPr(path, param);
+  });
+};
+
 // для ввода пути, с последующей обработкой пути в зависимости от платформы использования
 const questionPath = (platform, param) => {
-  let reg = /\\/g;
-  let inputPath = "";
-  if (param === "c") {
-    inputPath = readlineSync.question(
-      "Enter the path of the file or folder to compress files: "
-    );
-  } else if (param === "d") {
-    inputPath = readlineSync.question(
-      "Enter the path of the file or folder to decompress archives: "
-    );
-  } else if (param === "del") {
-    inputPath = readlineSync.question(
-      "Enter the path of the file or folder to delete archives: "
-    );
-  }
+  const reg = /\\/g;
+  const inputPath = Object.hasOwn(questionMessagesMap, param)
+    ? readlineSync.question(questionMessagesMap[param])
+    : "";
+
   if (platform === "win32") {
-    let path = inputPath.replace(/\\/g, "/");
-    fs.stat(path, function (err, stat) {
-      if (err) {
-        console.log(
-          `That file doesn't exist. Please check the path and try again.   `
-        );
-        return funcAutoCompressor();
-      } else {
-        if (param === "c") getFilesPr(path);
-        else deleteOrDecompressFilesPr(path, param);
-      }
-    });
+    someCommonFunction(inputPath.replace(/\\/g, "/"), param);
   } else {
     if (reg.test(inputPath)) {
-      let path = inputPath.replace(/\\/g, "/");
-      fs.stat(path, function (err, stat) {
-        if (err) {
-          console.log(
-            `That file doesn't exist. Please check the path and try again.   `
-          );
-          return funcAutoCompressor();
-        } else {
-          if (param === "c") getFilesPr(path);
-          else deleteOrDecompressFilesPr(path, param);
-        }
-      });
+      someCommonFunction(inputPath.replace(/\\/g, "/"), param);
     } else {
-      fs.stat(path, function (err, stat) {
-        if (err) {
-          console.log(
-            `That file doesn't exist. Please check the path and try again.   `
-          );
-          return funcAutoCompressor();
-        } else {
-          if (param === "c") getFilesPr(path);
-          else deleteOrDecompressFilesPr(path, param);
-        }
-      });
+      someCommonFunction(inputPath, param);
     }
   }
 };
@@ -337,8 +310,12 @@ const timeAndPath = (path, object, param) => {
       }
 
       if (!path.includes(".gz")) {
-        object.fileTime = stat.mtime;
-        object.size = stat.size;
+        if (object.error) {
+          resultObject(object);
+        } else {
+          object.fileTime = stat.mtime;
+          object.size = stat.size;
+        }
       } else object.gzTime = stat.mtime;
       if (object.gzTime && object.fileTime && param === "d") {
         if (gateway === true) {
@@ -377,17 +354,20 @@ const timeAndPath = (path, object, param) => {
 // функция для обработки полученных данных перед сжатием
 const resultObject = async (object) => {
   try {
+    if (object.error) sleepSix(object, 500);
     if (object.type === "file") {
       if (object.fileTime > object.gzTime) {
         console.log(
           `******Scan File: ${object.filePath}_____${object.type}******`
         );
         console.log(
-          `______FILE:${object.filePath} HAS AN ARCHIVE, BUT THE ARCHIVE IS OUT OF THE DATE______`
+          `______FILE:${object.filePath} HAS AN ARCHIVE, BUT THE ARCHIVE IS OUT OF THE DATE______${os.EOL}`
         );
         return new Promise(async (resolve, reject) => {
-          if (gateway === true) resolve(`${JSON.stringify(object)}`);
-          else {
+          if (gateway === true) {
+            gateway = false;
+            resolve(`${JSON.stringify(object)}`);
+          } else {
             await sleep(object, 500);
           }
         }).then((result) => {
@@ -406,9 +386,11 @@ const resultObject = async (object) => {
           `______FILE:${object.gzPath} ARCHIVE IS OUT OF THE DATE______`
         );
         return new Promise(async (resolve, reject) => {
-          object.filePath = object.filePath.replace(".gz", "");
-          if (gateway === true) resolve(`${JSON.stringify(object)}`);
-          else {
+          object.filePath = object.gzPath.replace(".gz", "");
+          if (gateway === true) {
+            gateway = false;
+            resolve(`${JSON.stringify(object)}`);
+          } else {
             await sleep(object, 500);
           }
         }).then((result) => {
@@ -484,8 +466,10 @@ function sleep(object, ms) {
 
 const awaitFunction = (object) => {
   return new Promise(async (resolve, reject) => {
-    if (gateway === true) resolve(`${JSON.stringify(object)}`);
-    else {
+    if (gateway === true) {
+      gateway = false;
+      resolve(`${JSON.stringify(object)}`);
+    } else {
       sleep(object, 500);
     }
   }).then((result) => {
@@ -503,8 +487,12 @@ function sleepTwo(object, ms) {
 
 const awaitFunctionTwo = (object) => {
   if (gateway === true) {
+    gateway = false;
     console.log(`******Scan File: ${object.gzPath}_____${object.type}******`);
-    console.log(`______FILE:${object.gzPath} ARCHIVE IS UP-TO-DATE______`);
+    console.log(
+      `______FILE:${object.gzPath} ARCHIVE IS UP-TO-DATE______${os.EOL}`
+    );
+    gateway = true;
   } else {
     sleepTwo(object, 500);
   }
@@ -520,10 +508,12 @@ function sleepThree(object, ms) {
 
 const awaitFunctionThree = (object) => {
   if (gateway === true) {
+    gateway = false;
     console.log(`******Scan File: ${object.filePath}_____${object.type}******`);
     console.log(
-      `______FILE:${object.filePath} HAS AN ARCHIVE, BUT THE ARCHIVE IS UP-TO-DATE______`
+      `______FILE:${object.filePath} HAS AN ARCHIVE, BUT THE ARCHIVE IS UP-TO-DATE______${os.EOL}`
     );
+    gateway = true;
   } else {
     sleepThree(object, 500);
   }
@@ -561,6 +551,27 @@ const awaitFunctionFive = (str) => {
     gateway = true;
   } else {
     sleepFive(str, 333);
+  }
+};
+
+function sleepSix(object, ms) {
+  return new Promise((resolve) =>
+    setTimeout(() => {
+      awaitFunctionSix(object);
+    }, ms)
+  );
+}
+
+const awaitFunctionSix = (object) => {
+  if (gateway === true) {
+    gateway = false;
+    console.log(`******Scan File: ${object.gzPath}_____${object.type}******`);
+    console.log(
+      `______FILE:${object.gzPath} ARCHIVE WITHOUT FILE______${os.EOL}`
+    );
+    gateway = true;
+  } else {
+    sleepSix(object, 500);
   }
 };
 
