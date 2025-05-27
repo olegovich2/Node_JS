@@ -209,6 +209,8 @@ webserver.post("/download", function (request, response) {
                 }
               }
             }
+            response.setHeader("Content-Type", "application/json");
+            response.setHeader("Cache-Control", "no-store");
             response.status(200).send(`${JSON.stringify(newObject)}`);
           }
         }
