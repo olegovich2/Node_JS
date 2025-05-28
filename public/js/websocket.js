@@ -6,18 +6,19 @@ export const reconnect = (str) => {
     connection.close(1000, "Предыдущее соединение с сервером закрыто"); // Закрываем предыдущее соединение
   }
   const url = "ws://178.172.195.18:7680";
-  // const url1 = "ws://localhost:7680";
+  // const url1 = "ws://localhost:7682";
   connection = new WebSocket(url); // это сокет-соединение с сервером
   let string = str || "Просто проверка связи";
   connection.onopen = (event) => {
     connection.send("Соединение установлено"); // можно послать строку, Blob или ArrayBuffer
     connection.send(localStorage.getItem("user"));
     connection.send(string);
-    connection.send("CLOSE");
   };
 
   connection.onmessage = function (event) {
     console.log("Получено сообщение от сервера: " + event.data);
+    if (event.data === "Передача и запись данных успешно завершена")
+      connection.send("CLOSE");
   };
 
   connection.onerror = (error) => {

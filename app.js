@@ -3,15 +3,14 @@ const WebSocket = require("ws");
 const path = require("path");
 const fs = require("fs");
 const bodyParser = require("body-parser");
-
 let clients = []; //массив клиентов
-let buffer = []; //массив полученных данных
-let countMessage = 0; //счетчик сообщений вебсокета
 
 // работа websocket
 const server = new WebSocket.Server({ port: 7680 });
 server.on("connection", (connection) => {
   try {
+    let directory = ""; //название директории для извенения файла
+    let countMessage = 0; //счетчик сообщений вебсокета
     connection.on("message", (message) => {
       if (
         new TextDecoder("utf-8").decode(message) === "Соединение установлено"
@@ -29,62 +28,21 @@ server.on("connection", (connection) => {
           if (client.connection === connection)
             client.lastkeepalive = Date.now();
         });
-        fs.stat(
-          `upload/${new TextDecoder("utf-8").decode(message)}`,
-          function (err, stat) {
-            if (err) {
-              return fs.mkdir(
-                `upload/${new TextDecoder("utf-8").decode(message)}`,
-                { recursive: true },
-                (err) => {
-                  if (err) throw err;
-                  connection.send("Папка успешно создана");
-                  const object = JSON.parse(buffer.toString("utf8"));
-                  let path = `upload/${new TextDecoder("utf-8").decode(
-                    message
-                  )}`;
-                  createFileAndWrite(object, path);
-                  connection.send("Данные успешно записаны");
-                  buffer.length = 0;
-                  countMessage = 0;
-                  clients.forEach((client) => {
-                    if (Date.now() > client.lastkeepalive) {
-                      client.connection.close(
-                        1000,
-                        "Соединение с сервером закрыто"
-                      );
-                      client.connection = null;
-                    }
-                  });
-                  clients = clients.filter((client) => client.connection);
-                }
-              );
-            }
-            if (stat.isDirectory()) {
-              connection.send("Папка для добавления данных существует");
-              const object = JSON.parse(buffer.toString("utf8"));
-              let path = `upload/${new TextDecoder("utf-8").decode(message)}`;
-              readAndWrite(object, path);
-              connection.send("Данные успешно записаны");
-              buffer.length = 0;
-              countMessage = 0;
-              clients.forEach((client) => {
-                if (Date.now() > client.lastkeepalive) {
-                  client.connection.close(
-                    1000,
-                    "Соединение с сервером закрыто"
-                  );
-                  client.connection = null;
-                }
-              });
-              clients = clients.filter((client) => client.connection);
-            }
-          }
-        );
+        directory = new TextDecoder("utf-8").decode(message);
+        connection.send("Получено название директории");
         countMessage++;
       } else if (new TextDecoder("utf-8").decode(message) === "CLOSE") {
         //передача данных завершена
         connection.send("Передача данных завершена");
+        directory = "";
+        countMessage = 0;
+        clients.forEach((client) => {
+          if (Date.now() > client.lastkeepalive) {
+            client.connection.close(1000, "Соединение с сервером закрыто");
+            client.connection = null;
+          }
+        });
+        clients = clients.filter((client) => client.connection);
       } else if (
         (new TextDecoder("utf-8").decode(message) !== "CLOSE" &&
           countMessage > 1) ||
@@ -94,10 +52,33 @@ server.on("connection", (connection) => {
       ) {
         //получаем данные данные
         connection.send("Получены данные");
-        buffer.push(message);
+        let data = new TextDecoder("utf-8").decode(message);
         clients.forEach((client) => {
           if (client.connection === connection)
             client.lastkeepalive = Date.now();
+        });
+        fs.stat(`upload/${directory}`, function (err, stat) {
+          if (err) {
+            return fs.mkdir(
+              `upload/${directory}`,
+              { recursive: true },
+              (err) => {
+                if (err) throw err;
+                connection.send("Папка успешно создана");
+                const object = JSON.parse(data);
+                let path = `upload/${directory}`;
+                createFileAndWrite(object, path);
+                connection.send("Передача и запись данных успешно завершена");
+              }
+            );
+          }
+          if (stat.isDirectory()) {
+            connection.send("Папка для добавления данных существует");
+            const object = JSON.parse(data);
+            let path = `upload/${directory}`;
+            readAndWrite(object, path);
+            connection.send("Передача и запись данных успешно завершена");
+          }
         });
       }
     });
