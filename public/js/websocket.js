@@ -6,6 +6,7 @@ export const reconnect = (str) => {
     connection.close(1000, "Предыдущее соединение с сервером закрыто"); // Закрываем предыдущее соединение
   }
   const url = "ws://178.172.195.18:7680";
+  // const url1 = "ws://localhost:7680";
   connection = new WebSocket(url); // это сокет-соединение с сервером
   let string = str || "Просто проверка связи";
   connection.onopen = (event) => {

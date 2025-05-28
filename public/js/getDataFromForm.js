@@ -13,44 +13,21 @@ const getDataFromForm = (event) => {
   const object = {};
   const file = fileInput.files[0];
   if (file) {
-    if (
-      file.name.includes(".jpg") ||
-      file.name.includes(".jpeg") ||
-      file.name.includes(".png") ||
-      file.name.includes(".gif")
-    ) {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const fileData = e.target.result;
-        object.filename = file.name;
-        object.comment = textareaComment.value;
-        object.id = Date.now().toString();
-        object.file = bufferToBase64(fileData);
-        reconnect(JSON.stringify(object));
-        formForUpload.reset();
-      };
-      reader.readAsArrayBuffer(file);
-    } else {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const fileData = e.target.result;
-        object.filename = file.name;
-        object.comment = textareaComment.value;
-        object.id = Date.now().toString();
-        object.file = btoa(new TextDecoder().decode(fileData));
-        reconnect(JSON.stringify(object));
-        formForUpload.reset();
-      };
-      reader.readAsArrayBuffer(file);
-    }
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const fileData = e.target.result;
+      object.filename = file.name;
+      object.comment = textareaComment.value;
+      object.id = Date.now().toString();
+      object.file = arrayBufferToBase64(fileData);
+      reconnect(JSON.stringify(object));
+      formForUpload.reset();
+    };
+    reader.readAsArrayBuffer(file);
   } else {
     console.log("no file");
   }
 };
-
-function bufferToBase64(buf) {
-  return btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
-}
 
 export const generateMarkerInField = (object, filename) => {
   const moduleTemplate = document.querySelector(
@@ -110,14 +87,52 @@ export const download = (filename, file) => {
     link.href = `data:image/png;base64,${file}`;
     link.download = `${filename}`;
     link.click();
-  } else {
+  } else if (
+    filename.includes(".txt") ||
+    filename.includes(".doc") ||
+    filename.includes(".docx") ||
+    filename.includes(".css") ||
+    filename.includes(".js") ||
+    filename.includes(".ts")
+  ) {
     const link = document.createElement("a");
     link.href =
       "data:text/plain;charset=utf-8," + encodeURIComponent(atob(file));
     link.download = `${filename}`;
     link.click();
+  } else if (filename.includes(".pdf")) {
+    const link = document.createElement("a");
+    const arrayBuf = b64ToBuffer(file);
+    const uint8Array = new Uint8Array(arrayBuf);
+    const blob = new Blob([uint8Array], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = `${filename}`;
+    link.click();
+  } else if (filename.includes(".mp3")) {
+    const link = document.createElement("a");
+    const arrayBuf = b64ToBuffer(file);
+    const uint8Array = new Uint8Array(arrayBuf);
+    const mp3Blob = new Blob([uint8Array], { type: "audio/mp3" });
+    const url = URL.createObjectURL(mp3Blob);
+    link.href = url;
+    link.download = `${filename}`;
+    link.click();
   }
 };
+
+function arrayBufferToBase64(buffer) {
+  var binary = "";
+  var bytes = new Uint8Array(buffer);
+  var len = bytes.byteLength;
+  for (var i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return window.btoa(binary);
+}
+
+const b64ToBuffer = (b64) =>
+  Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)).buffer;
 
 buttonForUpload.addEventListener("click", getDataFromForm);
 divFieldMarker.addEventListener("click", manualControlFieldMarker);
