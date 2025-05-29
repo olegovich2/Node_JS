@@ -10,7 +10,7 @@ export const reconnect = (str) => {
   }
   const url = "ws://178.172.195.18:7681";
   // const url1 = "ws://localhost:7681";
-  connection = new WebSocket(url1);
+  connection = new WebSocket(url);
   let string = str || "Просто проверка связи";
   connection.onopen = (event) => {
     if (progressBarContainer.classList.contains("unvisible"))
