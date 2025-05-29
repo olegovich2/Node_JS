@@ -6,7 +6,7 @@ const bodyParser = require("body-parser");
 let clients = []; //массив клиентов
 
 // работа websocket
-const server = new WebSocket.Server({ port: 7682 });
+const server = new WebSocket.Server({ port: 7680 });
 server.on("connection", (connection) => {
   try {
     let directory = ""; //название директории для извенения файла

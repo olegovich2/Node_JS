@@ -7,9 +7,9 @@ export const reconnect = (str) => {
   if (connection) {
     connection.close(1000, "Предыдущее соединение с сервером закрыто"); // Закрываем предыдущее соединение
   }
-  // const url = "ws://178.172.195.18:7680";
-  const url1 = "ws://localhost:7682";
-  connection = new WebSocket(url1); // это сокет-соединение с сервером
+  const url = "ws://178.172.195.18:7680";
+  // const url1 = "ws://localhost:7682";
+  connection = new WebSocket(url); // это сокет-соединение с сервером
   let string = str || "Просто проверка связи";
   connection.onopen = (event) => {
     if (progressBarContainer.classList.contains("unvisible"))
