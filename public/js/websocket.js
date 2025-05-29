@@ -8,8 +8,8 @@ export const reconnect = (str) => {
   if (connection) {
     connection.close(1000, "Предыдущее соединение с сервером закрыто"); // Закрываем предыдущее соединение
   }
-  // const url = "ws://178.172.195.18:7681";
-  const url1 = "ws://localhost:7681";
+  const url = "ws://178.172.195.18:7681";
+  // const url1 = "ws://localhost:7681";
   connection = new WebSocket(url1);
   let string = str || "Просто проверка связи";
   connection.onopen = (event) => {
