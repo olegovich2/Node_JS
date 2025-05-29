@@ -6,7 +6,7 @@ const bodyParser = require("body-parser");
 let clients = []; //массив клиентов
 
 // работа websocket
-const server = new WebSocket.Server({ port: 7680 });
+const server = new WebSocket.Server({ port: 7682 });
 server.on("connection", (connection) => {
   try {
     let directory = ""; //название директории для извенения файла
@@ -67,8 +67,7 @@ server.on("connection", (connection) => {
                 connection.send("Папка успешно создана");
                 const object = JSON.parse(data);
                 let path = `upload/${directory}`;
-                createFileAndWrite(object, path);
-                connection.send("Передача и запись данных успешно завершена");
+                createFileAndWrite(object, path, connection);
               }
             );
           }
@@ -76,8 +75,7 @@ server.on("connection", (connection) => {
             connection.send("Папка для добавления данных существует");
             const object = JSON.parse(data);
             let path = `upload/${directory}`;
-            readAndWrite(object, path);
-            connection.send("Передача и запись данных успешно завершена");
+            readAndWrite(object, path, connection);
           }
         });
       }
@@ -123,7 +121,13 @@ webserver.post("/openMarker", function (request, response) {
           } else {
             response.setHeader("Content-Type", "application/json");
             response.setHeader("Cache-Control", "no-store");
-            response.status(200).send(`${fileContent}`);
+            const object = JSON.parse(fileContent);
+            for (const key in object) {
+              if (object.hasOwnProperty(key)) {
+                delete object[key].file;
+              }
+            }
+            response.status(200).send(`${JSON.stringify(object)}`);
           }
         }
       );
@@ -205,40 +209,53 @@ webserver.post("/download", function (request, response) {
 // начинаем прослушивать подключения на 7681 порту
 webserver.listen(7681);
 
-const readAndWrite = (object, path) => {
+const readAndWrite = (object, path, connection) => {
   fs.readFile(`${path}/upload.json`, "utf8", function (error, fileContent) {
     if (error) throw error;
     const newObj = JSON.parse(fileContent);
     newObj[object.filename] = {};
+    connection.send("Запись завершена на 20%");
     newObj[object.filename].comment = object.comment;
+    connection.send("Запись завершена на 40%");
     newObj[object.filename].file = object.file;
+    connection.send("Запись завершена на 60%");
     newObj[object.filename].id = object.id;
-    fs.writeFile(
-      `${path}/upload.json`,
-      `${JSON.stringify(newObj)}`,
-      function (error) {
-        if (error) throw error;
-      }
+    connection.send("Запись завершена на 80%");
+    const fileStream = fs.createWriteStream(`${path}/upload.json`);
+    fileStream.write(JSON.stringify(newObj));
+    fileStream.end(connection.send("Запись завершена на 100%"));
+    fileStream.end(
+      connection.send("Передача и запись данных успешно завершена")
     );
+    fileStream.on("error", (err) => {
+      console.error("Ошибка при записи файла:", err);
+      connection.send("Передача и запись данных завершилась неудачно");
+    });
   });
 };
 
-const createFileAndWrite = (object, path) => {
+const createFileAndWrite = (object, path, connection) => {
   fs.stat(`${path}/upload.json`, function (err, stat) {
     const newObj = {};
     newObj[object.filename] = {};
+    connection.send("Запись завершена на 20%");
     newObj[object.filename].comment = object.comment;
+    connection.send("Запись завершена на 40%");
     newObj[object.filename].file = object.file;
+    connection.send("Запись завершена на 60%");
     newObj[object.filename].id = object.id;
+    connection.send("Запись завершена на 80%");
     if (err) {
-      return fs.writeFile(
-        `${path}/upload.json`,
-        JSON.stringify(newObj),
-        "utf8",
-        (err) => {
-          if (err) throw err;
-        }
+      const fileStream = fs.createWriteStream(`${path}/upload.json`);
+      fileStream.write(JSON.stringify(newObj));
+      fileStream.end(connection.send("Запись завершена на 100%"));
+      fileStream.end(
+        connection.send("Передача и запись данных успешно завершена")
       );
+      fileStream.on("error", (err) => {
+        console.error("Ошибка при записи файла:", err);
+        connection.send("Передача и запись данных завершилась неудачно");
+      });
     }
   });
 };

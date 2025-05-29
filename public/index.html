@@ -12,13 +12,17 @@
     <div class="base">
         <div class="uploadOnServer" data-div="uploadOnServer">
             <form class="formForUploadOnServer" data-form="formForUploadOnServer">
-                <input class="file" type="file" name="fileName" data-input="fileChoice" webkitfile/>
+                <input class="file" type="file" name="fileName" data-input="fileChoice" webkitfile />
                 <textarea class="comment" rows="4" placeholder="Введите комментарий" name="textareaComment"></textarea>
                 <button class="button" type="button" data-button="buttonUpload">Загрузить</button>
             </form>
         </div>
+        <div class="progress-bar unvisible">
+            <div class="progress-bar-inner"></div>
+        </div>
         <div class="result" data-div="result"></div>
     </div>
+
     <template data-template="template_marker">
         <div class="gridOrient" data-id="">
             <div class="template_p">

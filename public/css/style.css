@@ -20,7 +20,7 @@ body {
 .result {
     display: grid;
     grid-template-rows: 1fr;
-    gap:5px;
+    gap: 5px;
     margin: 0;
     padding: 0;
 }
@@ -40,11 +40,11 @@ body {
     font-size: 20px;
 }
 
-.template_p p{
+.template_p p {
     padding: 5px;
 }
 
-.template_buttons button{
+.template_buttons button {
     padding: 5px;
     margin: 5px;
     border: none;
@@ -58,4 +58,22 @@ button:hover,
 button:active {
     background-color: rgb(156, 156, 156);
     color: white;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 30px;
+    background-color: #f3f3f3;
+    position: relative;
+}
+
+.progress-bar-inner {
+    height: 100%;
+    width: 0;
+    background-color: #4caf50;
+    position: absolute;
+}
+
+.unvisible {
+    display:none;
 }
