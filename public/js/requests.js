@@ -73,7 +73,7 @@ export async function downloadFileToServer(url, data) {
     body: data,
   })
     .then((response) => {
-      if (response.ok) postDataForFileField("/openmarker", data);
+      if (response.ok) return;
       else throw new Error("Получение данных завершилось неудачей");
     })
     .catch((error) => {

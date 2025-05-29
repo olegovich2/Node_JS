@@ -72,7 +72,6 @@ const sendPath = () => {
 };
 
 export function updateProgressBar(value, when) {
-  console.log(typeof value);
   if (when === "request") progressBar.style.width = `${Number(value) / 2}%`;
   if (when === "write") progressBar.style.width = `${value}%`;
 }
