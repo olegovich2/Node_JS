@@ -3,89 +3,10 @@ const WebSocket = require("ws");
 const path = require("path");
 const fs = require("fs");
 const bodyParser = require("body-parser");
-let clients = []; //массив клиентов
 
-// работа websocket
-const server = new WebSocket.Server({ port: 7680 });
-server.on("connection", (connection) => {
-  try {
-    let directory = ""; //название директории для извенения файла
-    let countMessage = 0; //счетчик сообщений вебсокета
-    connection.on("message", (message) => {
-      if (
-        new TextDecoder("utf-8").decode(message) === "Соединение установлено"
-      ) {
-        //создание клиента
-        countMessage++;
-        clients.forEach((client) => {
-          if (client.connection === connection)
-            client.lastkeepalive = Date.now();
-        });
-        connection.send("Соединение установлено");
-      } else if (countMessage === 1) {
-        // создание папки для клиента или запись в существующую
-        clients.forEach((client) => {
-          if (client.connection === connection)
-            client.lastkeepalive = Date.now();
-        });
-        directory = new TextDecoder("utf-8").decode(message);
-        connection.send("Получено название директории");
-        countMessage++;
-      } else if (new TextDecoder("utf-8").decode(message) === "CLOSE") {
-        //передача данных завершена
-        connection.send("Передача данных завершена");
-        directory = "";
-        countMessage = 0;
-        clients.forEach((client) => {
-          if (Date.now() > client.lastkeepalive) {
-            client.connection.close(1000, "Соединение с сервером закрыто");
-            client.connection = null;
-          }
-        });
-        clients = clients.filter((client) => client.connection);
-      } else if (
-        (new TextDecoder("utf-8").decode(message) !== "CLOSE" &&
-          countMessage > 1) ||
-        (new TextDecoder("utf-8").decode(message) !==
-          "Соединение установлено" &&
-          countMessage > 1)
-      ) {
-        //получаем данные данные
-        connection.send("Получены данные");
-        let data = new TextDecoder("utf-8").decode(message);
-        clients.forEach((client) => {
-          if (client.connection === connection)
-            client.lastkeepalive = Date.now();
-        });
-        fs.stat(`upload/${directory}`, function (err, stat) {
-          if (err) {
-            return fs.mkdir(
-              `upload/${directory}`,
-              { recursive: true },
-              (err) => {
-                if (err) throw err;
-                connection.send("Папка успешно создана");
-                const object = JSON.parse(data);
-                let path = `upload/${directory}`;
-                createFileAndWrite(object, path, connection);
-              }
-            );
-          }
-          if (stat.isDirectory()) {
-            connection.send("Папка для добавления данных существует");
-            const object = JSON.parse(data);
-            let path = `upload/${directory}`;
-            readAndWrite(object, path, connection);
-          }
-        });
-      }
-    });
-
-    clients.push({ connection: connection, lastkeepalive: Date.now() });
-  } catch (error) {
-    console.log(error);
-  }
-});
+// переменные websocket
+let directory = ""; //название директории для изменения файла
+let countMessage = 0; //счетчик сообщений вебсокета
 
 // создаем объект приложения
 const webserver = express();
@@ -93,7 +14,6 @@ const webserver = express();
 // статические данные с JS, CSS, HTML
 webserver.use(express.static(path.join(__dirname, "public")));
 webserver.use(express.urlencoded({ extended: false }));
-webserver.use(bodyParser.json());
 
 // отдаем html документ
 webserver.get("/index.html", function (request, response) {
@@ -101,6 +21,64 @@ webserver.get("/index.html", function (request, response) {
   response.setHeader("Cache-Control", "public, max-age=60");
   response.send(path.join(__dirname, "index.html"));
 });
+
+// загрузка файлов на сервер
+webserver.post("/downloadToServer", function (request, response) {
+  try {
+    const contentLength = request.headers["content-length"];
+    let body = "";
+    request.on("data", (chunk) => {
+      body += chunk.toString();
+      server.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(
+            `Получено данных: ${(body.length / contentLength) * 100}`
+          );
+        }
+      });
+    });
+    request.on("end", () => {
+      server.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(
+            `Получение данных завершено: ${(body.length / contentLength) * 100}`
+          );
+        }
+      });
+      fs.stat(`upload/${directory}`, function (err, stat) {
+        if (err) {
+          return fs.mkdir(`upload/${directory}`, { recursive: true }, (err) => {
+            if (err) throw err;
+            server.clients.forEach((client) => {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send("Папка успешно создана");
+              }
+            });
+            const object = JSON.parse(body);
+            let path = `upload/${directory}`;
+            createFileAndWrite(object, path);
+            response.sendStatus(200);
+          });
+        }
+        if (stat.isDirectory()) {
+          server.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send("Папка для добавления данных существует");
+            }
+          });
+          const object = JSON.parse(body);
+          let path = `upload/${directory}`;
+          readAndWrite(object, path);
+          response.sendStatus(200);
+        }
+      });
+    });
+  } catch (error) {
+    response.status(400).send(`${error}`);
+  }
+});
+// парсит request
+webserver.use(bodyParser.json());
 
 // отправляем данные для выгрузки листа загруженных файлов
 webserver.post("/openMarker", function (request, response) {
@@ -206,56 +184,133 @@ webserver.post("/download", function (request, response) {
   }
 });
 
-// начинаем прослушивать подключения на 7681 порту
-webserver.listen(7681);
+// начинаем прослушивать подключения на 7681 порту и создаем константу для апгрейда экспресса и вебсокета
+const s = webserver.listen(7681);
 
-const readAndWrite = (object, path, connection) => {
+// функция чтения и записи
+const readAndWrite = (object, path) => {
   fs.readFile(`${path}/upload.json`, "utf8", function (error, fileContent) {
     if (error) throw error;
     const newObj = JSON.parse(fileContent);
     newObj[object.filename] = {};
-    connection.send("Запись завершена на 20%");
     newObj[object.filename].comment = object.comment;
-    connection.send("Запись завершена на 40%");
     newObj[object.filename].file = object.file;
-    connection.send("Запись завершена на 60%");
     newObj[object.filename].id = object.id;
-    connection.send("Запись завершена на 80%");
     const fileStream = fs.createWriteStream(`${path}/upload.json`);
     fileStream.write(JSON.stringify(newObj));
-    fileStream.end(connection.send("Запись завершена на 100%"));
     fileStream.end(
-      connection.send("Передача и запись данных успешно завершена")
+      server.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send("Запись завершена на 100");
+          client.send("Передача и запись данных успешно завершена");
+        }
+      })
     );
     fileStream.on("error", (err) => {
       console.error("Ошибка при записи файла:", err);
-      connection.send("Передача и запись данных завершилась неудачно");
+      server.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send("Передача и запись данных завершилась неудачно");
+        }
+      });
     });
   });
 };
 
-const createFileAndWrite = (object, path, connection) => {
+// если нет директории, то создает и записывает
+const createFileAndWrite = (object, path) => {
   fs.stat(`${path}/upload.json`, function (err, stat) {
     const newObj = {};
     newObj[object.filename] = {};
-    connection.send("Запись завершена на 20%");
     newObj[object.filename].comment = object.comment;
-    connection.send("Запись завершена на 40%");
     newObj[object.filename].file = object.file;
-    connection.send("Запись завершена на 60%");
     newObj[object.filename].id = object.id;
-    connection.send("Запись завершена на 80%");
     if (err) {
       const fileStream = fs.createWriteStream(`${path}/upload.json`);
       fileStream.write(JSON.stringify(newObj));
-      fileStream.end(connection.send("Запись завершена на 100%"));
       fileStream.end(
-        connection.send("Передача и запись данных успешно завершена")
+        server.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send("Запись завершена на 100");
+            client.send("Передача и запись данных успешно завершена");
+          }
+        })
       );
       fileStream.on("error", (err) => {
         console.error("Ошибка при записи файла:", err);
-        connection.send("Передача и запись данных завершилась неудачно");
+        server.clients.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send("Передача и запись данных завершилась неудачно");
+          }
+        });
       });
     }
   });
 };
+
+// предварительный обработчик ошибок вебсокета
+const onSocketPreError = (error = Error) => {
+  console.log(error);
+};
+
+// дополнительный обработчик ошибок вебсокета
+const onSocketPostError = (error = Error) => {
+  console.log(error);
+};
+
+// создаем вебсокет на одном порту с экспрессом
+const server = new WebSocket.Server({ noServer: true });
+
+// апгрейд вебсокета
+s.on("upgrade", (request, socket, head) => {
+  socket.on("error", onSocketPreError);
+  if (!!request.headers["BadAuth"]) {
+    socket.write("HTTP/1.1 401 Unauthorized");
+    socket.destroy();
+    return;
+  }
+  server.handleUpgrade(request, socket, head, (ws) => {
+    socket.removeListener("error", onSocketPreError);
+    server.emit("connection", ws, request);
+  });
+});
+
+// начинаем слушать соединение и события
+server.on("connection", (ws, request) => {
+  ws.on("error", onSocketPostError);
+
+  ws.on("message", (msg, isBinary) => {
+    if (new TextDecoder("utf-8").decode(msg) === "Соединение установлено") {
+      ws.send("Соединение установлено");
+      countMessage++;
+      server.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.lastkeepalive = Date.now();
+        }
+      });
+    } else if (countMessage === 1) {
+      directory = new TextDecoder("utf-8").decode(msg);
+      ws.send("Получено название директории");
+      countMessage++;
+      server.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.lastkeepalive = Date.now();
+        }
+      });
+    } else if (new TextDecoder("utf-8").decode(msg) === "CLOSE") {
+      ws.send("Передача данных завершена");
+      directory = "";
+      countMessage = 0;
+      server.clients.forEach((client) => {
+        if (Date.now() > client.lastkeepalive) {
+          client.close(1000, "Соединение с сервером закрыто");
+          client = null;
+        }
+      });
+    }
+  });
+
+  ws.on("close", () => {
+    ws.send("Соединение завершено");
+  });
+});

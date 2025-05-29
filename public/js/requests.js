@@ -57,8 +57,24 @@ export async function downloadFile(url, data) {
     })
     .then((result) => {
       download(result.filename, result.file);
-      //   clearAndGenerateMarkers(result);
-      //   divFieldMarker.scrollIntoView({ block: "start", inline: "nearest" });
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+  return answer;
+}
+
+export async function downloadFileToServer(url, data) {
+  const answer = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: data,
+  })
+    .then((response) => {
+      if (response.ok) postDataForFileField("/openmarker", data);
+      else throw new Error("Получение данных завершилось неудачей");
     })
     .catch((error) => {
       console.error(error);

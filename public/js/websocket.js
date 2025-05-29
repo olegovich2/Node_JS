@@ -1,22 +1,21 @@
-import { postDataForFileField } from "./requests.js";
+import { postDataForFileField, downloadFileToServer } from "./requests.js";
 
 export const progressBar = document.querySelector(".progress-bar-inner");
 export const progressBarContainer = document.querySelector(".progress-bar");
 export let connection;
+
 export const reconnect = (str) => {
   if (connection) {
     connection.close(1000, "Предыдущее соединение с сервером закрыто"); // Закрываем предыдущее соединение
   }
-  const url = "ws://178.172.195.18:7680";
-  // const url1 = "ws://localhost:7682";
-  connection = new WebSocket(url); // это сокет-соединение с сервером
+  // const url = "ws://178.172.195.18:7681";
+  const url1 = "ws://localhost:7681";
+  connection = new WebSocket(url1);
   let string = str || "Просто проверка связи";
   connection.onopen = (event) => {
     if (progressBarContainer.classList.contains("unvisible"))
       progressBarContainer.classList.remove("unvisible");
-    connection.send("Соединение установлено"); // можно послать строку, Blob или ArrayBuffer
-    connection.send(localStorage.getItem("user"));
-    connection.send(string);
+    connection.send("Соединение установлено");
   };
 
   connection.onmessage = function (event) {
@@ -26,8 +25,17 @@ export const reconnect = (str) => {
       event.data === "Передача и запись данных завершилась неудачно"
     ) {
       connection.send("CLOSE");
-    } else if (event.data.includes("%")) {
-      updateProgressBar(event.data.replace("Запись завершена на ", ""));
+    } else if (event.data.includes("Получено данных: ")) {
+      updateProgressBar(event.data.replace("Получено данных: ", ""), "request");
+    } else if (event.data.includes("Запись завершена на ")) {
+      updateProgressBar(
+        event.data.replace("Запись завершена на ", ""),
+        "write"
+      );
+    } else if (event.data === "Соединение установлено") {
+      connection.send(localStorage.getItem("user"));
+    } else if (event.data === "Получено название директории") {
+      downloadFileToServer("/downloadToServer", string);
     }
   };
 
@@ -39,7 +47,6 @@ export const reconnect = (str) => {
     console.log(
       `Соединение закрыто. Код: ${event.code}, причина: ${event.reason}`
     );
-
     sendPath();
   };
 };
@@ -64,6 +71,8 @@ const sendPath = () => {
     progressBarContainer.classList.add("unvisible");
 };
 
-export function updateProgressBar(value) {
-  progressBar.style.width = value;
+export function updateProgressBar(value, when) {
+  console.log(typeof value);
+  if (when === "request") progressBar.style.width = `${Number(value) / 2}%`;
+  if (when === "write") progressBar.style.width = `${value}%`;
 }
