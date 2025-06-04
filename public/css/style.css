@@ -1,0 +1,55 @@
+body {
+    background-color: grey;
+}
+
+.formForSendOnServer {
+    display: grid;
+    grid-template-rows: 1fr;
+    margin: 0;
+    padding: 0;
+}
+
+.pWithSelect,
+.pWithTextarea {
+    display: inherit;
+    grid-template-rows: 1fr;
+    margin: 0;
+    padding: 0;
+}
+
+.pWithSelect p,
+.pWithTextarea p {
+    font-size: 20px;
+    margin: 0;
+    padding: 0;
+}
+
+.error {
+    background-color: rgba(255, 0, 0, 0.385);
+    border:red;
+}
+.container {
+    display: grid;
+    grid-template-rows: 1fr;
+    background-color: rgba(255, 0, 0, 0.395);
+    margin: 0;
+    padding: 0;
+}
+
+.container p {
+    font-size: 20px;
+    margin: 5px 0;
+    padding: 0;
+    font-weight: bolder;
+}
+
+.containerSuccess {
+    background-color: rgba(34, 255, 0, 0.395);
+    margin: 0;
+    padding: 0;
+}
+.containerInfo {
+    background-color: rgba(0, 149, 255, 0.395);
+    margin: 0;
+    padding: 0;
+}
