@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQLExplorer</title>
+    <link href="/css/style.css" type="text/css" rel="stylesheet" />
+</head>
+
+<body>
+    <div class="base">
+        <div class="sendOnServer" data-div="sendOnServer">
+            <form class="formForSendOnServer" data-form="formForSendOnServer">
+                <div class="pWithSelect">
+                    <p>Выберите базу данных:</p>
+                    <select name="listDB" data-select="listDB"></select>
+                </div>
+                <div class="pWithTextarea">
+                    <p>Введите запрос, согласно примеру в поле, не указывайте вручную базу данных:</p>
+                    <textarea class="comment" rows="8"
+                        placeholder="Введите запрос, и он автоматически отправится к выбранной в выпадающем списке базе данных. Например: SHOW TABLES;"
+                        name="textareaRequest"></textarea>
+                </div>
+                <button class="button" type="button" data-button="buttonSend">Отправить запрос</button>
+            </form>
+        </div>
+        <div class="result" data-div="result"></div>
+    </div>
+</body>
+
+<script type="module" src="/js/getDataFromForm.js"></script>
+<script type="module" src="/js/requests.js"></script>
+<script type="module" src="/js/outputResult.js"></script>
+
+</html>
