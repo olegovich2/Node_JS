@@ -18,10 +18,10 @@ export const getDataFromForm = (event) => {
   event.preventDefault();
   const object = {};
   if (!!event.target.dataset.button) {
-    object.req = textareaForRequest.value.toUpperCase();
+    object.req = textareaForRequest.value;
     object.DB = selectForListDB.value;
     postDataForRequestToDB("/reqToDB", JSON.stringify(object));
-    formForRequest.reset();
+    textareaForRequest.value = "";
   }
 };
 

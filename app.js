@@ -26,11 +26,12 @@ const poolConfig = {
   port: 3306,
 };
 
+let pool = mysql.createPool(poolConfig);
+
 // получаем все DB
 webserver.get("/getDB", async function (request, response) {
   let connection = null;
   try {
-    let pool = mysql.createPool(poolConfig);
     connection = await newConnectionFactory(pool, response);
     let groups = await selectQueryFactory(connection, "SHOW DATABASES;", []);
     const object = {};
@@ -51,35 +52,32 @@ webserver.get("/getDB", async function (request, response) {
   }
 });
 
+const resetPool = (data) => {
+  pool.end();
+  poolConfig.database = data;
+  pool = mysql.createPool(poolConfig);
+};
+
 // отправка запроса и получения ответа
 webserver.post("/reqToDB", async function (request, response) {
   let connection = null;
   try {
-    poolConfig.database = request.body.DB;
-    let pool = mysql.createPool(poolConfig);
+    resetPool(request.body.DB);
     connection = await newConnectionFactory(pool, response);
-    if (
-      request.body.req.includes("INSERT") ||
-      request.body.req.includes("UPDATE") ||
-      request.body.req.includes("DELETE") ||
-      request.body.req.includes("CREATE") ||
-      request.body.req.includes("RENAME") ||
-      request.body.req.includes("DROP")
-    ) {
-      await modifyQueryFactory(connection, request.body.req, [], response);
-    } else {
-      let groups = await selectQueryFactory(connection, request.body.req, []);
-      response.setHeader("Content-Type", "application/json");
-      response.setHeader("Cache-Control", "no-store");
-      response.status(200).send(`${JSON.stringify(groups)}`);
-    }
+    let groups = await selectQueryFactory(
+      connection,
+      request.body.req,
+      [],
+      response
+    );
+    response.setHeader("Content-Type", "application/json");
+    response.setHeader("Cache-Control", "no-store");
+    response.status(200).send(`${JSON.stringify(groups)}`);
   } catch (error) {
-    poolConfig.database = "";
     response.setHeader("Content-Type", "application/json");
     response.setHeader("Cache-Control", "no-store");
     response.status(200).send(`${JSON.stringify(error)}`);
   } finally {
-    poolConfig.database = "";
     if (connection) connection.release();
   }
 });
@@ -100,7 +98,7 @@ function newConnectionFactory(pool, response) {
 }
 
 // выполняет SQL-запрос на чтение, возвращает массив прочитанных строк
-function selectQueryFactory(connection, queryText, queryValues) {
+function selectQueryFactory(connection, queryText, queryValues, response) {
   return new Promise((resolve, reject) => {
     connection.query(queryText, queryValues, function (err, results, fields) {
       if (err) {
@@ -110,30 +108,30 @@ function selectQueryFactory(connection, queryText, queryValues) {
       } else {
         if (queryText === "SHOW DATABASES;") resolve(results);
         else {
-          const object = { ...results };
-          object.fields = fields;
-          object.req = queryText;
-          resolve(object);
+          if (fields === undefined) {
+            getModifiedRowsCount(connection, queryText, response);
+          } else {
+            const object = { ...results };
+            object.fields = clearArrayToClient(fields);
+            object.req = queryText;
+            resolve(object);
+          }
         }
       }
     });
   });
 }
 
-// выполняет SQL-запрос на модификацию
-function modifyQueryFactory(connection, queryText, queryValues, response) {
-  return new Promise((resolve, reject) => {
-    connection.query(queryText, queryValues, function (err, res) {
-      if (err) {
-        const object = {};
-        object.error = err;
-        reject(object);
-      } else {
-        getModifiedRowsCount(connection, queryText, response);
-      }
-    });
-  });
-}
+// очистка массива объектов от лишних ключей
+const clearArrayToClient = (array) => {
+  const newArray = [];
+  for (let i = 0; i < array.length; i++) {
+    const object = {};
+    object.name = array[i].name;
+    newArray.push(object);
+  }
+  return newArray;
+};
 
 // возвращает количество изменённых последним запросом строк
 function getModifiedRowsCount(connection, queryText, response) {
