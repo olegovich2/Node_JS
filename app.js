@@ -53,9 +53,11 @@ webserver.get("/getDB", async function (request, response) {
 });
 
 const resetPool = (data) => {
-  pool.end();
-  poolConfig.database = data;
-  pool = mysql.createPool(poolConfig);
+  if (poolConfig.database !== data) {
+    pool.end();
+    poolConfig.database = data;
+    pool = mysql.createPool(poolConfig);
+  }
 };
 
 // отправка запроса и получения ответа
