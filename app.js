@@ -7,6 +7,7 @@ const bodyParser = require("body-parser");
 // переменные websocket
 let directory = ""; //название директории для изменения файла
 let countMessage = 0; //счетчик сообщений вебсокета
+const activeClients = []; //активные соединения websocket
 
 // создаем объект приложения
 const webserver = express();
@@ -27,46 +28,46 @@ webserver.post("/downloadToServer", function (request, response) {
   try {
     const contentLength = request.headers["content-length"];
     let body = "";
+    let idForCompare = "";
     request.on("data", (chunk) => {
       body += chunk.toString();
-      server.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(
-            `Получено данных: ${(body.length / contentLength) * 100}`
-          );
+      idForCompare = body.slice(body.indexOf(":") + 2, body.indexOf(",") - 1);
+      activeClients.forEach((client) => {
+        if (
+          client.readyState === WebSocket.OPEN &&
+          client.uniqueID === idForCompare
+        ) {
+          client.lastkeepalive = Date.now();
+          const objectToClient = {};
+          objectToClient.websocketId = client.uniqueID;
+          let percentData = Math.round((body.length / contentLength) * 100);
+          objectToClient.message = `Получено данных: ${percentData}`;
+          client.send(JSON.stringify(objectToClient));
         }
       });
     });
     request.on("end", () => {
-      server.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(
-            `Получение данных завершено: ${(body.length / contentLength) * 100}`
-          );
-        }
-      });
+      messageToClientFromExpress(
+        JSON.parse(body),
+        `Получение данных завершено: ${(body.length / contentLength) * 100}`
+      );
       fs.stat(`upload/${directory}`, function (err, stat) {
         if (err) {
           return fs.mkdir(`upload/${directory}`, { recursive: true }, (err) => {
             if (err) throw err;
-            server.clients.forEach((client) => {
-              if (client.readyState === WebSocket.OPEN) {
-                client.send("Папка успешно создана");
-              }
-            });
             const object = JSON.parse(body);
+            messageToClientFromExpress(object, "Папка успешно создана");
             let path = `upload/${directory}`;
             createFileAndWrite(object, path);
             response.sendStatus(200);
           });
         }
         if (stat.isDirectory()) {
-          server.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-              client.send("Папка для добавления данных существует");
-            }
-          });
           const object = JSON.parse(body);
+          messageToClientFromExpress(
+            object,
+            "Папка для добавления данных существует"
+          );
           let path = `upload/${directory}`;
           readAndWrite(object, path);
           response.sendStatus(200);
@@ -77,6 +78,7 @@ webserver.post("/downloadToServer", function (request, response) {
     response.status(400).send(`${error}`);
   }
 });
+
 // парсит request
 webserver.use(bodyParser.json());
 
@@ -198,21 +200,10 @@ const readAndWrite = (object, path) => {
     newObj[object.filename].id = object.id;
     const fileStream = fs.createWriteStream(`${path}/upload.json`);
     fileStream.write(JSON.stringify(newObj));
-    fileStream.end(
-      server.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send("Запись завершена на 100");
-          client.send("Передача и запись данных успешно завершена");
-        }
-      })
-    );
+    fileStream.end(messageToClientSuccessWrite(object));
     fileStream.on("error", (err) => {
       console.error("Ошибка при записи файла:", err);
-      server.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send("Передача и запись данных завершилась неудачно");
-        }
-      });
+      messageToclientErrorWrite(object);
     });
   });
 };
@@ -228,21 +219,10 @@ const createFileAndWrite = (object, path) => {
     if (err) {
       const fileStream = fs.createWriteStream(`${path}/upload.json`);
       fileStream.write(JSON.stringify(newObj));
-      fileStream.end(
-        server.clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send("Запись завершена на 100");
-            client.send("Передача и запись данных успешно завершена");
-          }
-        })
-      );
+      fileStream.end(messageToClientSuccessWrite(object));
       fileStream.on("error", (err) => {
         console.error("Ошибка при записи файла:", err);
-        server.clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send("Передача и запись данных завершилась неудачно");
-          }
-        });
+        messageToclientErrorWrite(object);
       });
     }
   });
@@ -278,39 +258,100 @@ s.on("upgrade", (request, socket, head) => {
 // начинаем слушать соединение и события
 server.on("connection", (ws, request) => {
   ws.on("error", onSocketPostError);
-
   ws.on("message", (msg, isBinary) => {
-    if (new TextDecoder("utf-8").decode(msg) === "Соединение установлено") {
-      ws.send("Соединение установлено");
+    const objectFromClient = JSON.parse(new TextDecoder("utf-8").decode(msg));
+    if (objectFromClient.message === "Соединение установлено") {
+      ws.uniqueID = objectFromClient.websocketId;
+      activeClients.push(ws);
       countMessage++;
-      server.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.lastkeepalive = Date.now();
-        }
-      });
+      messageToclient(objectFromClient);
     } else if (countMessage === 1) {
-      directory = new TextDecoder("utf-8").decode(msg);
-      ws.send("Получено название директории");
+      directory = objectFromClient.message;
+      objectFromClient.message = "Получено название директории";
       countMessage++;
-      server.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.lastkeepalive = Date.now();
-        }
-      });
-    } else if (new TextDecoder("utf-8").decode(msg) === "CLOSE") {
-      ws.send("Передача данных завершена");
+      messageToclient(objectFromClient);
+    } else if (objectFromClient.message === "CLOSE") {
+      objectFromClient.message = "Передача данных завершена";
       directory = "";
       countMessage = 0;
-      server.clients.forEach((client) => {
-        if (Date.now() > client.lastkeepalive) {
+      activeClients.forEach((client) => {
+        if (
+          Date.now() > client.lastkeepalive &&
+          client.uniqueID === objectFromClient.websocketId
+        ) {
           client.close(1000, "Соединение с сервером закрыто");
-          client = null;
         }
       });
     }
   });
-
   ws.on("close", () => {
-    ws.send("Соединение завершено");
+    activeClients.forEach((client, i) => {
+      if (client.readyState !== WebSocket.CLOSE) {
+        activeClients.splice(i, 1);
+      }
+    });
   });
 });
+
+// сообщение клиенту
+const messageToclient = (object) => {
+  activeClients.forEach((client) => {
+    if (
+      client.readyState === WebSocket.OPEN &&
+      client.uniqueID === object.websocketId
+    ) {
+      client.lastkeepalive = Date.now();
+      client.send(JSON.stringify(object));
+    }
+  });
+};
+
+// отправка сообщения в случае успешной записи файла
+const messageToClientSuccessWrite = (object) => {
+  activeClients.forEach((client) => {
+    if (
+      client.readyState === WebSocket.OPEN &&
+      client.uniqueID === object.websocketid
+    ) {
+      client.lastkeepalive = Date.now();
+      const objectToClient = {};
+      objectToClient.websocketId = client.uniqueID;
+      objectToClient.message = "Запись завершена на 100";
+      client.send(JSON.stringify(objectToClient));
+      objectToClient.message = "Передача и запись данных успешно завершена";
+      client.send(JSON.stringify(objectToClient));
+    }
+  });
+};
+
+// отправка сообщения в случае ошибки
+const messageToclientErrorWrite = (object) => {
+  activeClients.forEach((client) => {
+    if (
+      client.readyState === WebSocket.OPEN &&
+      client.uniqueID === object.websocketid
+    ) {
+      client.lastkeepalive = Date.now();
+      const objectToClient = {};
+      objectToClient.websocketId = client.uniqueID;
+      objectToClient.message = "Передача и запись данных завершилась неудачно";
+      client.send(JSON.stringify(objectToClient));
+    }
+  });
+};
+
+// отпправка сообщения из экспресса
+const messageToClientFromExpress = (object, message) => {
+  activeClients.forEach((client) => {
+    if (
+      client.readyState === WebSocket.OPEN &&
+      client.uniqueID === object.websocketid
+    ) {
+      client.lastkeepalive = Date.now();
+      const objectToClient = {};
+      objectToClient.websocketId = client.uniqueID;
+      objectToClient.message = message;
+      client.send(JSON.stringify(objectToClient));
+    }
+  });
+};

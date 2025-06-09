@@ -12,15 +12,17 @@ export const divFieldMarker = document.querySelector('[data-div="result"]');
 const getDataFromForm = (event) => {
   const object = {};
   const file = fileInput.files[0];
+  const id = Date.now().toString();
   if (file) {
     const reader = new FileReader();
     reader.onload = async (e) => {
       const fileData = e.target.result;
+      object.websocketid = id;
       object.filename = file.name;
       object.comment = textareaComment.value;
-      object.id = Date.now().toString();
+      object.id = id;
       object.file = arrayBufferToBase64(fileData);
-      reconnect(JSON.stringify(object));
+      reconnect(object, id);
       formForUpload.reset();
     };
     reader.readAsArrayBuffer(file);

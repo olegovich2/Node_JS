@@ -4,37 +4,48 @@ export const progressBar = document.querySelector(".progress-bar-inner");
 export const progressBarContainer = document.querySelector(".progress-bar");
 export let connection;
 
-export const reconnect = (str) => {
+export const reconnect = (object, websocketId) => {
   if (connection) {
     connection.close(1000, "Предыдущее соединение с сервером закрыто"); // Закрываем предыдущее соединение
   }
-  const url = "ws://178.172.195.18:7681";
-  // const url1 = "ws://localhost:7681";
-  connection = new WebSocket(url);
-  let string = str || "Просто проверка связи";
+  // const url = "ws://178.172.195.18:7681";
+  const url1 = "ws://localhost:7681";
+  connection = new WebSocket(url1);
+  let string = JSON.stringify(object);
+  const objectForMessage = {};
   connection.onopen = (event) => {
+    objectForMessage.websocketId = websocketId;
+    objectForMessage.message = "Соединение установлено";
     if (progressBarContainer.classList.contains("unvisible"))
       progressBarContainer.classList.remove("unvisible");
-    connection.send("Соединение установлено");
+    connection.send(JSON.stringify(objectForMessage));
   };
 
   connection.onmessage = function (event) {
-    console.log("Получено сообщение от сервера: " + event.data);
+    const objectFromServer = JSON.parse(event.data);
+    console.log("Получено сообщение от сервера: " + objectFromServer.message);
     if (
-      event.data === "Передача и запись данных успешно завершена" ||
-      event.data === "Передача и запись данных завершилась неудачно"
+      objectFromServer.message ===
+        "Передача и запись данных успешно завершена" ||
+      objectFromServer.message ===
+        "Передача и запись данных завершилась неудачно"
     ) {
-      connection.send("CLOSE");
-    } else if (event.data.includes("Получено данных: ")) {
-      updateProgressBar(event.data.replace("Получено данных: ", ""), "request");
-    } else if (event.data.includes("Запись завершена на ")) {
+      objectFromServer.message = "CLOSE";
+      connection.send(JSON.stringify(objectFromServer));
+    } else if (objectFromServer.message.includes("Получено данных: ")) {
       updateProgressBar(
-        event.data.replace("Запись завершена на ", ""),
+        objectFromServer.message.replace("Получено данных: ", ""),
+        "request"
+      );
+    } else if (objectFromServer.message.includes("Запись завершена на ")) {
+      updateProgressBar(
+        objectFromServer.message.replace("Запись завершена на ", ""),
         "write"
       );
-    } else if (event.data === "Соединение установлено") {
-      connection.send(localStorage.getItem("user"));
-    } else if (event.data === "Получено название директории") {
+    } else if (objectFromServer.message === "Соединение установлено") {
+      objectFromServer.message = localStorage.getItem("user");
+      connection.send(JSON.stringify(objectFromServer));
+    } else if (objectFromServer.message === "Получено название директории") {
       downloadFileToServer("/downloadToServer", string);
     }
   };
