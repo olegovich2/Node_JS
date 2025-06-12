@@ -3,123 +3,42 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const bodyParser = require("body-parser");
+const mysql = require("mysql2");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { objectForCreateDom } = require("./utils/constants");
+const { objectError } = require("./utils/constants");
+const secretKey = "uploadfile";
+const secretKeyTwo = "sessionkey";
+const { poolConfig } = require("./utils/configFile");
+const { transporter } = require("./utils/configFile");
+const { validateEmail } = require("./utils/functions");
+const { docHtml } = require("./utils/functions");
+let pool = mysql.createPool(poolConfig);
 
-// объект с кусочками html документа
-const objectForCreateDom = {
-  htmlNew: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Form with Express</title>
-    <link href="/css/style.css" type="text/css" rel="stylesheet" />
-</head>
-<body>
-    <div>
-        <h3>Заполните данные полей:</h3>
-        <form method="post" action="/variants" target="_self" data-form="transition">            
-            <div class="fields">
-                <p>Введите ваш логин:</p>
-                <input class="input $[inputClassLogin]" type="text" placeholder="Введите ваш логин" name="login" value="$[login]">
-                <p class="$[classPLogin]">$[textPErrorLogin]</p>
-            </div>
-            <div class="fields">
-                <p>Введите ваш пароль:</p>
-                <input class="input $[inputClassPassword]" type="text" placeholder="Введите ваш пароль" name="password" value="$[password]">
-                <p class="$[classPPassword]">$[textPErrorPassword]</p>
-            </div>
-            <button type="submit">Отправить</button>
-        </form>
-    </div>
-</body>
-</html>`,
-  htmlSuccess: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Form with Express</title>
-    <link href="/css/style.css" type="text/css" rel="stylesheet" />
-</head>
-<body>
-    <div>
-        <h1>Поздравляем, $[login], вы успешно зарегистрировались!</h1>        
-    </div>
-    <form method="get" action="/index.html" target="_self" data-form="transition">            
-            <button type="submit">Вернуться на главную страницу</button>
-        </form>
-</body>
-</html>`,
-  htmlError: `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Form with Express</title>
-    <link href="/css/style.css" type="text/css" rel="stylesheet" />
-</head>
-<body>
-    <div>
-        <h1>$[status]</h1>        
-    </div>
-    <form method="get" action="/index.html" target="_self" data-form="transition">            
-            <button type="submit">Вернуться на главную страницу</button>
-        </form>
-</body>
-</html>`,
-};
-
-// объект с ошибками
-const objectError = {
-  scriptNone: "Нельзя заполнять поле скриптом!",
-  loginwrongSymbol: "Поле логин содержит недопустимые символы",
-  passwordWrongSymbol: "Поле пароль содержит недопустимые символы",
-  errorUndefined: "Ничего не нашлось",
-  loginNull: "В поле логин ничего нет, введине логин",
-  loginShort: "Логин слишком короткий",
-  loginLonger: "Логин слишком длинный",
-  passwordNull: "В поле пароль ничего нет, введине пароль",
-  passwordKirillica: "В поле пароль нельзя использовать кириллицу",
-  passwordShort: "Пароль слишком короткий",
-  passwordLonger: "Пароль слишком длинный",
-  passwordSimple: "Пароль простой",
-  passwordMedium: "Пароль средний",
-  passwordHard: "Пароль сложный",
-};
-
-// объект с классами
-const objectCss = {
-  errors: "errors",
-  errorParagraf: "error_p",
-  empty: "",
-  success: "success",
-  successParagraf: "success_p",
-  simply: "simply",
-  simplyParagraf: "simply_p",
-  medium: "medium",
-  mediumParagraf: "medium_p",
-};
 // создаем объект приложения
 const webserver = express();
 
 // статические данные с JS, CSS, HTML
 webserver.use(express.static(path.join(__dirname, "public")));
-
 webserver.use(express.urlencoded({ extended: false }));
 webserver.use(bodyParser.json());
 
-// отдаем html документ
-webserver.get("/index.html", function (request, response) {
+// отдаем страницу аутентификации
+webserver.get("/main/auth", function (request, response) {
   response.setHeader("Content-Type", "text/html");
-  response.setHeader("Cache-Control", "public, max-age=60");
-  response.send(path.join(__dirname, "index.html"));
+  response.setHeader("Cache-Control", "no-cache");
+  response.sendFile(__dirname + "/public" + "/auth.html");
 });
 
-// отправка вариантов ответа для голосования
-webserver.post("/variants", function (request, response) {
+// аутентификация-валидация-токен-почта
+webserver.post("/main/auth/variants", async function (request, response) {
+  let connection = null;
   try {
+    connection = await newConnectionFactory(pool, response);
     // проверка для поля логин
     if (request.body.login) {
+      // валидация поля логин
       const loginString = JSON.stringify(request.body.login);
       if (loginString.includes("<script>") || loginString.includes("</script>"))
         throw new Error(objectError.scriptNone);
@@ -130,7 +49,18 @@ webserver.post("/variants", function (request, response) {
         loginString.includes("&")
       )
         throw new Error(objectError.loginwrongSymbol);
+
+      // проверка логина на уникальность
+      let answer = await selectQueryFactory(
+        connection,
+        `select * from usersdata where login =?;`,
+        [request.body.login]
+      );
+      if (answer.length > 0) {
+        throw new Error(objectError.loginAlreadyExists);
+      }
     }
+
     // проверка для поля пароль
     if (request.body.password) {
       const passwordString = JSON.stringify(request.body.password);
@@ -146,14 +76,47 @@ webserver.post("/variants", function (request, response) {
       )
         throw new Error(objectError.passwordWrongSymbol);
     }
+
+    // проверка email
+    if (!validateEmail(request.body.email)) {
+      if (request.body.email.length === 0)
+        throw new Error(objectError.emailNull);
+      else throw new Error(objectError.emailerrorOne);
+    }
     // отправляем страницу
     const newPage = docHtml(request);
     if (typeof newPage === "object") {
-      response.setHeader("Access-Control-Allow-Origin", "*");
-      response.redirect(
-        302,
-        `/success?login=${(request.query.login = newPage.login)}`
+      const salt = await bcrypt.genSalt(10);
+      const hashPass = await bcrypt.hash(request.body.password, salt);
+      const payload = { username: request.body.login };
+      const token = jwt.sign(payload, secretKey, { expiresIn: "366d" });
+      let answerInsert = await selectQueryFactory(
+        connection,
+        `INSERT INTO usersdata (login, password, email, jwt, logic)
+      VALUES(?, ?, ?, ?, ?);`,
+        [request.body.login, hashPass, request.body.email, token, "false"]
       );
+      if (answerInsert === "успех") {
+        const mailOptions = {
+          from: "trmailforupfile@gmail.com",
+          to: `${request.body.email}`,
+          subject: "Завершение авторизации",
+          html: `<p>Для завершения авторизации - перейдите по ссылке:</p><br><p><a href="http://localhost:7681/main/auth/final?token=${(request.query.token =
+            token)}">http://localhost:7681/main/auth/final?token=${token}</a></p>`,
+        };
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            response.redirect(302, `/main/auth/error?errorMessage=${error}`);
+          } else {
+            response.setHeader("Access-Control-Allow-Origin", "*");
+            response.redirect(
+              302,
+              `/main/auth/success?login=${(request.query.login =
+                newPage.login)}`
+            );
+          }
+        });
+      }
     } else {
       response.setHeader("Access-Control-Allow-Origin", "*");
       response.status(200).send(`${newPage}`);
@@ -162,12 +125,13 @@ webserver.post("/variants", function (request, response) {
     // отправляем текст ошибки
     response.redirect(
       302,
-      `/error?errorMessage=${(request.query.errorMessage = error)}`
+      `/main/auth/error?errorMessage=${(request.query.errorMessage = error)}`
     );
   }
 });
 
-webserver.get("/error", function (request, response) {
+// аутентификация ошибки
+webserver.get("/main/auth/error", function (request, response) {
   try {
     if (request.query.errorMessage) {
       response.setHeader("Content-Type", "text/html");
@@ -185,12 +149,13 @@ webserver.get("/error", function (request, response) {
   } catch (error) {
     response.redirect(
       302,
-      `/error?errorMessage=${(request.query.errorMessage = error)}`
+      `/main/auth/error?errorMessage=${(request.query.errorMessage = error)}`
     );
   }
 });
 
-webserver.get("/success", function (request, response) {
+// страница успешной аутентификации
+webserver.get("/main/auth/success", function (request, response) {
   try {
     if (request.query.login) {
       response.setHeader("Content-Type", "text/html");
@@ -205,167 +170,214 @@ webserver.get("/success", function (request, response) {
   } catch (error) {
     response.redirect(
       302,
-      `/error?errorMessage=${(request.query.errorMessage = error)}`
+      `/main/auth/error?errorMessage=${(request.query.errorMessage = error)}`
     );
   }
+});
+
+// обработчик страницы финальной авторизации
+webserver.get("/main/auth/final", async function (request, response) {
+  let connection = null;
+  try {
+    connection = await newConnectionFactory(pool, response);
+    if (request.query.token) {
+      let answerUpdate = await selectQueryFactory(
+        connection,
+        `UPDATE usersdata
+     SET logic = REPLACE(logic, 'false', 'true')
+     WHERE jwt = ?;`,
+        [request.query.token]
+      );
+      if (answerUpdate === "успех") {
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.redirect(302, `/main/entry`);
+      }
+    }
+  } catch (error) {
+    response.redirect(
+      302,
+      `/main/auth/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
+  }
+});
+
+// обработчик страницы входа
+webserver.get("/main/entry", async function (request, response) {
+  try {
+    response.setHeader("Content-Type", "text/html");
+    response.setHeader("Cache-Control", "no-store");
+    response.sendFile(__dirname + "/public" + "/entry.html");
+  } catch (error) {
+    response.redirect(
+      302,
+      `/main/entry/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
+  }
+});
+
+// обработчик ошибок страницы входа
+webserver.get("/main/entry/error", function (request, response) {
+  try {
+    if (request.query.errorMessage) {
+      response.setHeader("Content-Type", "text/html");
+      response.setHeader("Cache-Control", "no-store");
+      // создание html ошибки
+      let errorPage = objectForCreateDom.htmlErrorTwo;
+      errorPage = errorPage.replace(
+        "$[status]",
+        `${request.query.errorMessage}`
+      );
+      response.status(200).send(`${errorPage}`);
+    } else {
+      throw new Error(objectError.errorUndefined);
+    }
+  } catch (error) {
+    response.redirect(
+      302,
+      `/main/entry/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
+  }
+});
+
+// валидация входа, создание сессии
+webserver.post("/entryData", async function (request, response) {
+  let connection = null;
+  try {
+    connection = await newConnectionFactory(pool, response);
+    // валидация поля логин
+    if (request.body.login) {
+      const loginString = JSON.stringify(request.body.login);
+      if (loginString.includes("<script>") || loginString.includes("</script>"))
+        throw new Error(objectError.scriptNone);
+      if (
+        loginString.includes("<") ||
+        loginString.includes(">") ||
+        loginString.includes("/") ||
+        loginString.includes("&")
+      )
+        throw new Error(objectError.loginwrongSymbol);
+    } else throw new Error(objectError.loginNull);
+
+    // проверка для поля пароль
+    if (request.body.password) {
+      const passwordString = JSON.stringify(request.body.password);
+      if (
+        passwordString.includes("<script>") ||
+        passwordString.includes("</script>")
+      )
+        throw new Error(objectError.scriptNone);
+      if (
+        passwordString.includes("<") ||
+        passwordString.includes(">") ||
+        passwordString.includes(" ")
+      )
+        throw new Error(objectError.passwordWrongSymbol);
+    } else throw new Error(objectError.passwordNull);
+
+    // проверка логина на нахождение в таблице
+    let answerExistLogin = await selectQueryFactory(
+      connection,
+      `select * from usersdata where login =?;`,
+      [request.body.login]
+    );
+    if (answerExistLogin.length === 0) {
+      throw new Error(objectError.loginPasswordPairNotExist);
+    } else {
+      const passwordCompare = await bcrypt.compare(
+        request.body.password,
+        answerExistLogin[0].password
+      );
+      if (passwordCompare) {
+        createTokenAndWriteToDB(request.body.login, connection, response);
+      } else {
+        throw new Error(objectError.loginPasswordPairNotExist);
+      }
+    }
+  } catch (error) {
+    response.redirect(
+      302,
+      `/main/entry/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
+  }
+});
+
+const createTokenAndWriteToDB = async (login, connection, response) => {
+  const payload = { username: login };
+  const token = jwt.sign(payload, secretKeyTwo, { expiresIn: "2h" });
+  let insertToSessionTab = await selectQueryFactory(
+    connection,
+    `INSERT INTO sessionsdata (login, jwt_access)
+      VALUES(?, ?);`,
+    [login, token]
+  );
+  if (insertToSessionTab === "успех") {
+    let getDataFromSessionTab = await selectQueryFactory(
+      connection,
+      `select * from sessionsdata where jwt_access =?;`,
+      [token]
+    );
+    const objectToClient = getDataFromSessionTab[0];
+    response.status(200).send(`${JSON.stringify(objectToClient)}`);
+  }
+};
+
+webserver.post("/toMain", function (request, response) {
+  try {
+    const authHeader = request.headers.authorization;
+    if (!authHeader) {
+      return response.redirect(302, `/main/entry`);
+    }
+    const token = authHeader.split(" ")[1];
+    jwt.verify(token, secretKeyTwo, (err, user) => {
+      if (err) {
+        return response.redirect(302, `/main/entry`);
+      } else {
+        return response.redirect(302, `/main`);
+      }
+    });
+  } catch (error) {
+    response.redirect(
+      302,
+      `/main/entry/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
+  }
+});
+
+webserver.get("/main", function (request, response) {
+  response.setHeader("Content-Type", "text/html");
+  response.setHeader("Cache-Control", "no-cache");
+  response.sendFile(__dirname + "/public" + "/main.html");
 });
 
 // начинаем прослушивать подключения на 7681 порту
 webserver.listen(7681);
 
-// функция создания html документа
-const docHtml = (object) => {
-  const resultObject = {};
-  const regularKirillica = /[а-яА-ЯёЁ\s\.\,\!\?\-]/gm;
-  let anyconst = objectForCreateDom.htmlNew;
-  // проверка логина на длину
-  if (!object.body.login || object.body.login.length === 0) {
-    anyconst = anyconst.replace("$[inputClassLogin]", objectCss.errors);
-    anyconst = anyconst.replace("$[login]", objectCss.empty);
-    anyconst = anyconst.replace("$[classPLogin]", objectCss.errorParagraf);
-    anyconst = anyconst.replace("$[textPErrorLogin]", objectError.loginNull);
-  } else if (object.body.login.length !== 0 && object.body.login.length < 4) {
-    anyconst = anyconst.replace("$[inputClassLogin]", objectCss.errors);
-    anyconst = anyconst.replace("$[login]", `${object.body.login}`);
-    anyconst = anyconst.replace("$[classPLogin]", objectCss.errorParagraf);
-    anyconst = anyconst.replace("$[textPErrorLogin]", objectError.loginShort);
-  } else if (object.body.login.length !== 0 && object.body.login.length > 20) {
-    anyconst = anyconst.replace("$[inputClassLogin]", objectCss.errors);
-    anyconst = anyconst.replace("$[login]", `${object.body.login}`);
-    anyconst = anyconst.replace("$[classPLogin]", objectCss.errorParagraf);
-    anyconst = anyconst.replace("$[textPErrorLogin]", objectError.loginLonger);
-  } else if (
-    object.body.login.length !== 0 &&
-    object.body.login.length >= 4 &&
-    object.body.login.length <= 20
-  ) {
-    anyconst = anyconst.replace("$[inputClassLogin]", objectCss.success);
-    anyconst = anyconst.replace("$[login]", `${object.body.login}`);
-    anyconst = anyconst.replace("$[classPLogin]", objectCss.empty);
-    anyconst = anyconst.replace("$[textPErrorLogin]", objectCss.empty);
-    resultObject.login = "успех";
-  }
-  // проверка пароля на длину
-  if (!object.body.password || object.body.password.length === 0) {
-    anyconst = anyconst.replace("$[inputClassPassword]", objectCss.errors);
-    anyconst = anyconst.replace("$[password]", objectCss.empty);
-    anyconst = anyconst.replace("$[classPPassword]", objectCss.errorParagraf);
-    anyconst = anyconst.replace(
-      "$[textPErrorPassword]",
-      objectError.passwordNull
-    );
-  } else if (regularKirillica.test(object.body.password)) {
-    anyconst = anyconst.replace("$[inputClassPassword]", objectCss.errors);
-    anyconst = anyconst.replace("$[password]", `${object.body.password}`);
-    anyconst = anyconst.replace("$[classPPassword]", objectCss.errorParagraf);
-    anyconst = anyconst.replace(
-      "$[textPErrorPassword]",
-      objectError.passwordKirillica
-    );
-  } else if (
-    object.body.password.length !== 0 &&
-    object.body.password.length > 15
-  ) {
-    anyconst = anyconst.replace("$[inputClassPassword]", objectCss.errors);
-    anyconst = anyconst.replace("$[password]", `${object.body.password}`);
-    anyconst = anyconst.replace("$[classPPassword]", objectCss.errorParagraf);
-    anyconst = anyconst.replace(
-      "$[textPErrorPassword]",
-      objectError.passwordLonger
-    );
-  } else if (
-    object.body.password.length !== 0 &&
-    object.body.password.length <= 4
-  ) {
-    anyconst = anyconst.replace("$[inputClassPassword]", objectCss.errors);
-    anyconst = anyconst.replace("$[password]", `${object.body.password}`);
-    anyconst = anyconst.replace("$[classPPassword]", objectCss.errorParagraf);
-    anyconst = anyconst.replace(
-      "$[textPErrorPassword]",
-      objectError.passwordShort
-    );
-  } else if (
-    object.body.password.length !== 0 &&
-    object.body.password.length > 4 &&
-    object.body.password.length <= 15
-  ) {
-    if (checkPasswords(object.body.password) === "Простой") {
-      anyconst = anyconst.replace("$[inputClassPassword]", objectCss.simply);
-      anyconst = anyconst.replace("$[password]", `${object.body.password}`);
-      anyconst = anyconst.replace(
-        "$[classPPassword]",
-        objectCss.simplyParagraf
-      );
-      anyconst = anyconst.replace(
-        "$[textPErrorPassword]",
-        objectError.passwordSimple
-      );
-    }
-    if (checkPasswords(object.body.password) === "Средний") {
-      anyconst = anyconst.replace("$[inputClassPassword]", objectCss.medium);
-      anyconst = anyconst.replace("$[password]", `${object.body.password}`);
-      anyconst = anyconst.replace(
-        "$[classPPassword]",
-        objectCss.mediumParagraf
-      );
-      anyconst = anyconst.replace(
-        "$[textPErrorPassword]",
-        objectError.passwordMedium
-      );
-      resultObject.password = "успех";
-    }
-    if (checkPasswords(object.body.password) === "Сложный") {
-      anyconst = anyconst.replace("$[inputClassPassword]", objectCss.success);
-      anyconst = anyconst.replace("$[password]", `${object.body.password}`);
-      anyconst = anyconst.replace(
-        "$[classPPassword]",
-        objectCss.successParagraf
-      );
-      anyconst = anyconst.replace(
-        "$[textPErrorPassword]",
-        objectError.passwordHard
-      );
-      resultObject.password = "успех";
-    }
-  }
+// возвращает соединение с БД, взятое из пула соединений
+function newConnectionFactory(pool, response) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection(function (err, connection) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(connection);
+      }
+    });
+  });
+}
 
-  if (resultObject.password === "успех" && resultObject.login === "успех") {
-    const success = {};
-    success.login = object.body.login;
-    return success;
-  }
-  return anyconst;
-};
-
-const checkPasswords = (string) => {
-  const s_letters = "qwertyuiopasdfghjklzxcvbnm"; // Буквы в нижнем регистре
-  const b_letters = "QWERTYUIOPLKJHGFDSAZXCVBNM"; // Буквы в верхнем регистре
-  const digits = "0123456789"; // Цифры
-  const specials = "!@#$%^&*()_-+=|/.,:;[]{}"; // Спецсимволы
-  let is_s = false; // Есть ли в пароле буквы в нижнем регистре
-  let is_b = false; // Есть ли в пароле буквы в верхнем регистре
-  let is_d = false; // Есть ли в пароле цифры
-  let is_sp = false; // Есть ли в пароле спецсимволы
-  for (let i = 0; i < string.length; i++) {
-    /* Проверяем каждый символ пароля на принадлежность к тому или иному типу */
-    if (!is_s && s_letters.indexOf(string[i]) != -1) is_s = true;
-    else if (!is_b && b_letters.indexOf(string[i]) != -1) is_b = true;
-    else if (!is_d && digits.indexOf(string[i]) != -1) is_d = true;
-    else if (!is_sp && specials.indexOf(string[i]) != -1) is_sp = true;
-  }
-  let rating = 0;
-  let text = "";
-  if (is_s) rating++; // Если в пароле есть символы в нижнем регистре, то увеличиваем рейтинг сложности
-  if (is_b) rating++; // Если в пароле есть символы в верхнем регистре, то увеличиваем рейтинг сложности
-  if (is_d) rating++; // Если в пароле есть цифры, то увеличиваем рейтинг сложности
-  if (is_sp) rating++; // Если в пароле есть спецсимволы, то увеличиваем рейтинг сложности
-  /* Далее идёт анализ длины пароля и полученного рейтинга, и на основании этого готовится текстовое описание сложности пароля */
-  if (string.length < 6 && rating < 3) text = "Простой";
-  else if (string.length < 6 && rating >= 3) text = "Средний";
-  else if (string.length >= 8 && rating < 3) text = "Средний";
-  else if (string.length >= 8 && rating >= 3) text = "Сложный";
-  else if (string.length >= 6 && rating == 1) text = "Простой";
-  else if (string.length >= 6 && rating > 1 && rating < 4) text = "Средний";
-  else if (string.length >= 6 && rating == 4) text = "Сложный";
-  return text;
-};
+// выполняет SQL-запрос на чтение, возвращает массив прочитанных строк
+function selectQueryFactory(connection, queryText, queryValues, response) {
+  return new Promise((resolve, reject) => {
+    connection.query(queryText, queryValues, function (err, results, fields) {
+      if (err) {
+        reject(err);
+      } else {
+        if (fields === undefined) {
+          resolve("успех");
+        } else {
+          resolve(results);
+        }
+      }
+    });
+  });
+}

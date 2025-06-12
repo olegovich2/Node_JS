@@ -1,56 +1,72 @@
 body {
-    background-color: bisque;
+    background-color: rgb(156, 156, 156);
+    margin: 0;
+    padding: 0;
 }
+
 h3 {
     margin: 0 30%;
     text-align: center;
 }
-form {
+
+.formForAuth {
     margin: 15px 0;
+    width: 100%;
 }
-.fields{
+
+.fields {
     display: grid;
     grid-template-columns: 20% 40% 1fr;
     margin: 10px 0;
 }
+
 .input {
     height: 30px;
     margin: 10px 0;
-    border: none;    
-}
-button {
     border: none;
-    background-color: black;
-    color: antiquewhite;
-    margin: 10px 40%;
-    height: 30px;
-    width: 150px;
-    border-radius: 30px;
 }
+
+.formForAuth button {
+    padding: 5px;
+    margin: 0 40%;
+    border: none;
+    background-color: white;
+    font-size: 15px;
+    border-radius: 15px;
+    border-bottom: 2px solid black;
+}
+
 .errors {
     border: 2px solid red;
 }
+
 .errors_p {
     padding: 10px;
     color: red;
 }
+
 .success {
     border: 2px solid green;
 }
+
 .simply {
     border: 2px solid rgb(154, 13, 248);
 }
+
 .medium {
     border: 2px solid rgb(1, 118, 150);
 }
+
 .simply_p {
     padding: 10px;
     color: rgb(154, 13, 248);
 }
+
 .medium_p {
     padding: 10px;
     color: rgb(1, 118, 150);
 }
+
 .success_p {
     padding: 10px;
     color: green;
