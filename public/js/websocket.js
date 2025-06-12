@@ -74,6 +74,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+window.onbeforeunload = function () {
+  localStorage.clear();
+};
+
 const intervalId = setInterval(() => {
   if (localStorage.getItem("user") === null) {
     redirectToEntry();
