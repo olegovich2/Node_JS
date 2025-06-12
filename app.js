@@ -3,11 +3,33 @@ const WebSocket = require("ws");
 const path = require("path");
 const fs = require("fs");
 const bodyParser = require("body-parser");
+const mysql = require("mysql2");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { objectForCreateDom } = require("./utils/constants");
+const { objectError } = require("./utils/constants");
+const secretKey = "uploadfile";
+const secretKeyTwo = "sessionkey";
+const { poolConfig } = require("./utils/configFile");
+const { transporter } = require("./utils/configFile");
+const { validateEmail } = require("./utils/functions");
+const { docHtml } = require("./utils/functions");
+let pool = mysql.createPool(poolConfig);
+const url = "http://178.172.195.18:7681";
+// const url1 = "http://localhost:7681";
 
 // переменные websocket
 let directory = ""; //название директории для изменения файла
 let countMessage = 0; //счетчик сообщений вебсокета
-const activeClients = []; //активные соединения websocket
+const { activeClients } = require("./utils/funcForWebsocket");
+const { messageToClientFromExpress } = require("./utils/funcForWebsocket");
+const { messageToclient } = require("./utils/funcForWebsocket");
+const { onSocketPreError } = require("./utils/funcForWebsocket");
+const { onSocketPostError } = require("./utils/funcForWebsocket");
+
+// переменные чтения и записи
+const { readAndWrite } = require("./utils/funcForReadWrite");
+const { createFileAndWrite } = require("./utils/funcForReadWrite");
 
 // создаем объект приложения
 const webserver = express();
@@ -17,62 +39,80 @@ webserver.use(express.static(path.join(__dirname, "public")));
 webserver.use(express.urlencoded({ extended: false }));
 
 // отдаем html документ
-webserver.get("/index.html", function (request, response) {
+webserver.get("/main", function (request, response) {
   response.setHeader("Content-Type", "text/html");
-  response.setHeader("Cache-Control", "public, max-age=60");
-  response.send(path.join(__dirname, "index.html"));
+  response.setHeader("Cache-Control", "no-cache");
+  response.sendFile(__dirname + "/public" + "/main.html");
 });
 
 // загрузка файлов на сервер
-webserver.post("/downloadToServer", function (request, response) {
+webserver.post("/downloadToServer", async function (request, response) {
   try {
-    const contentLength = request.headers["content-length"];
-    let body = "";
-    let idForCompare = "";
-    request.on("data", (chunk) => {
-      body += chunk.toString();
-      idForCompare = body.slice(body.indexOf(":") + 2, body.indexOf(",") - 1);
-      activeClients.forEach((client) => {
-        if (
-          client.readyState === WebSocket.OPEN &&
-          client.uniqueID === idForCompare
-        ) {
-          client.lastkeepalive = Date.now();
-          const objectToClient = {};
-          objectToClient.websocketId = client.uniqueID;
-          let percentData = Math.round((body.length / contentLength) * 100);
-          objectToClient.message = `Получено данных: ${percentData}`;
-          client.send(JSON.stringify(objectToClient));
-        }
-      });
-    });
-    request.on("end", () => {
-      messageToClientFromExpress(
-        JSON.parse(body),
-        `Получение данных завершено: ${(body.length / contentLength) * 100}`
-      );
-      fs.stat(`upload/${directory}`, function (err, stat) {
-        if (err) {
-          return fs.mkdir(`upload/${directory}`, { recursive: true }, (err) => {
-            if (err) throw err;
-            const object = JSON.parse(body);
-            messageToClientFromExpress(object, "Папка успешно создана");
-            let path = `upload/${directory}`;
-            createFileAndWrite(object, path);
-            response.sendStatus(200);
-          });
-        }
-        if (stat.isDirectory()) {
-          const object = JSON.parse(body);
-          messageToClientFromExpress(
-            object,
-            "Папка для добавления данных существует"
+    const authHeader = request.headers.authorization;
+    if (!authHeader) {
+      return response.redirect(302, `/main/entry`);
+    }
+    const token = authHeader.split(" ")[1];
+    jwt.verify(token, secretKeyTwo, (err, user) => {
+      if (err) {
+        return response.redirect(302, `/main/entry`);
+      } else {
+        const contentLength = request.headers["content-length"];
+        let body = "";
+        let idForCompare = "";
+        request.on("data", (chunk) => {
+          body += chunk.toString();
+          idForCompare = body.slice(
+            body.indexOf(":") + 2,
+            body.indexOf(",") - 1
           );
-          let path = `upload/${directory}`;
-          readAndWrite(object, path);
-          response.sendStatus(200);
-        }
-      });
+          activeClients.forEach((client) => {
+            if (
+              client.readyState === WebSocket.OPEN &&
+              client.uniqueID === idForCompare
+            ) {
+              client.lastkeepalive = Date.now();
+              const objectToClient = {};
+              objectToClient.websocketId = client.uniqueID;
+              let percentData = Math.round((body.length / contentLength) * 100);
+              objectToClient.message = `Получено данных: ${percentData}`;
+              client.send(JSON.stringify(objectToClient));
+            }
+          });
+        });
+        request.on("end", () => {
+          messageToClientFromExpress(
+            JSON.parse(body),
+            `Получение данных завершено: ${(body.length / contentLength) * 100}`
+          );
+          fs.stat(`upload/${directory}`, function (err, stat) {
+            if (err) {
+              return fs.mkdir(
+                `upload/${directory}`,
+                { recursive: true },
+                (err) => {
+                  if (err) throw err;
+                  const object = JSON.parse(body);
+                  messageToClientFromExpress(object, "Папка успешно создана");
+                  let path = `upload/${directory}`;
+                  createFileAndWrite(object, path);
+                  response.sendStatus(200);
+                }
+              );
+            }
+            if (stat.isDirectory()) {
+              const object = JSON.parse(body);
+              messageToClientFromExpress(
+                object,
+                "Папка для добавления данных существует"
+              );
+              let path = `upload/${directory}`;
+              readAndWrite(object, path);
+              response.sendStatus(200);
+            }
+          });
+        });
+      }
     });
   } catch (error) {
     response.status(400).send(`${error}`);
@@ -81,6 +121,334 @@ webserver.post("/downloadToServer", function (request, response) {
 
 // парсит request
 webserver.use(bodyParser.json());
+
+// аутентификация начало
+
+// отдаем страницу аутентификации
+webserver.get("/main/auth", function (request, response) {
+  response.setHeader("Content-Type", "text/html");
+  response.setHeader("Cache-Control", "no-cache");
+  response.sendFile(__dirname + "/public" + "/auth.html");
+});
+
+// аутентификация-валидация-токен-почта
+webserver.post("/main/auth/variants", async function (request, response) {
+  let connection = null;
+  try {
+    connection = await newConnectionFactory(pool, response);
+    // проверка для поля логин
+    if (request.body.login) {
+      // валидация поля логин
+      const loginString = JSON.stringify(request.body.login);
+      if (loginString.includes("<script>") || loginString.includes("</script>"))
+        throw new Error(objectError.scriptNone);
+      if (
+        loginString.includes("<") ||
+        loginString.includes(">") ||
+        loginString.includes("/") ||
+        loginString.includes("&")
+      )
+        throw new Error(objectError.loginwrongSymbol);
+
+      // проверка логина на уникальность
+      let answer = await selectQueryFactory(
+        connection,
+        `select * from usersdata where login =?;`,
+        [request.body.login]
+      );
+      if (answer.length > 0) {
+        throw new Error(objectError.loginAlreadyExists);
+      }
+    }
+
+    // проверка для поля пароль
+    if (request.body.password) {
+      const passwordString = JSON.stringify(request.body.password);
+      if (
+        passwordString.includes("<script>") ||
+        passwordString.includes("</script>")
+      )
+        throw new Error(objectError.scriptNone);
+      if (
+        passwordString.includes("<") ||
+        passwordString.includes(">") ||
+        passwordString.includes(" ")
+      )
+        throw new Error(objectError.passwordWrongSymbol);
+    }
+
+    // проверка email
+    if (!validateEmail(request.body.email)) {
+      if (request.body.email.length === 0)
+        throw new Error(objectError.emailNull);
+      else throw new Error(objectError.emailerrorOne);
+    }
+    // отправляем страницу
+    const newPage = docHtml(request);
+    if (typeof newPage === "object") {
+      const salt = await bcrypt.genSalt(10);
+      const hashPass = await bcrypt.hash(request.body.password, salt);
+      const payload = { username: request.body.login };
+      const token = jwt.sign(payload, secretKey, { expiresIn: "366d" });
+      let answerInsert = await selectQueryFactory(
+        connection,
+        `INSERT INTO usersdata (login, password, email, jwt, logic)
+      VALUES(?, ?, ?, ?, ?);`,
+        [request.body.login, hashPass, request.body.email, token, "false"]
+      );
+      if (answerInsert === "успех") {
+        const mailOptions = {
+          from: "trmailforupfile@gmail.com",
+          to: `${request.body.email}`,
+          subject: "Завершение авторизации",
+          html: `<p>Для завершения авторизации - перейдите по ссылке:</p><br><p><a href="${url}/main/auth/final?token=${(request.query.token =
+            token)}">${url}/main/auth/final?token=${token}</a></p>`,
+        };
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            response.redirect(302, `/main/auth/error?errorMessage=${error}`);
+          } else {
+            response.setHeader("Access-Control-Allow-Origin", "*");
+            response.redirect(
+              302,
+              `/main/auth/success?login=${(request.query.login =
+                newPage.login)}`
+            );
+          }
+        });
+      }
+    } else {
+      response.setHeader("Access-Control-Allow-Origin", "*");
+      response.status(200).send(`${newPage}`);
+    }
+  } catch (error) {
+    // отправляем текст ошибки
+    response.redirect(
+      302,
+      `/main/auth/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
+  }
+});
+
+// аутентификация ошибки
+webserver.get("/main/auth/error", function (request, response) {
+  try {
+    if (request.query.errorMessage) {
+      response.setHeader("Content-Type", "text/html");
+      response.setHeader("Cache-Control", "no-store");
+      // создание html ошибки
+      let errorPage = objectForCreateDom.htmlError;
+      errorPage = errorPage.replace(
+        "$[status]",
+        `${request.query.errorMessage}`
+      );
+      response.status(200).send(`${errorPage}`);
+    } else {
+      throw new Error(objectError.errorUndefined);
+    }
+  } catch (error) {
+    response.redirect(
+      302,
+      `/main/auth/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
+  }
+});
+
+// страница успешной аутентификации
+webserver.get("/main/auth/success", function (request, response) {
+  try {
+    if (request.query.login) {
+      response.setHeader("Content-Type", "text/html");
+      response.setHeader("Cache-Control", "no-store");
+      // создание html успеха
+      let successPage = objectForCreateDom.htmlSuccess;
+      successPage = successPage.replace("$[login]", `${request.query.login}`);
+      response.status(200).send(`${successPage}`);
+    } else {
+      throw new Error(objectError.errorUndefined);
+    }
+  } catch (error) {
+    response.redirect(
+      302,
+      `/main/auth/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
+  }
+});
+
+// обработчик страницы финальной авторизации
+webserver.get("/main/auth/final", async function (request, response) {
+  let connection = null;
+  try {
+    connection = await newConnectionFactory(pool, response);
+    if (request.query.token) {
+      let answerUpdate = await selectQueryFactory(
+        connection,
+        `UPDATE usersdata
+     SET logic = REPLACE(logic, 'false', 'true')
+     WHERE jwt = ?;`,
+        [request.query.token]
+      );
+      if (answerUpdate === "успех") {
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.redirect(302, `/main/entry`);
+      }
+    }
+  } catch (error) {
+    response.redirect(
+      302,
+      `/main/auth/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
+  }
+});
+
+// обработчик страницы входа
+webserver.get("/main/entry", async function (request, response) {
+  try {
+    response.setHeader("Content-Type", "text/html");
+    response.setHeader("Cache-Control", "no-store");
+    response.sendFile(__dirname + "/public" + "/entry.html");
+  } catch (error) {
+    response.redirect(
+      302,
+      `/main/entry/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
+  }
+});
+
+// обработчик ошибок страницы входа
+webserver.get("/main/entry/error", function (request, response) {
+  try {
+    if (request.query.errorMessage) {
+      response.setHeader("Content-Type", "text/html");
+      response.setHeader("Cache-Control", "no-store");
+      // создание html ошибки
+      let errorPage = objectForCreateDom.htmlErrorTwo;
+      errorPage = errorPage.replace(
+        "$[status]",
+        `${request.query.errorMessage}`
+      );
+      response.status(200).send(`${errorPage}`);
+    } else {
+      throw new Error(objectError.errorUndefined);
+    }
+  } catch (error) {
+    response.redirect(
+      302,
+      `/main/entry/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
+  }
+});
+
+// валидация входа, создание сессии
+webserver.post("/entryData", async function (request, response) {
+  let connection = null;
+  try {
+    connection = await newConnectionFactory(pool, response);
+    // валидация поля логин
+    if (request.body.login) {
+      const loginString = JSON.stringify(request.body.login);
+      if (loginString.includes("<script>") || loginString.includes("</script>"))
+        throw new Error(objectError.scriptNone);
+      if (
+        loginString.includes("<") ||
+        loginString.includes(">") ||
+        loginString.includes("/") ||
+        loginString.includes("&")
+      )
+        throw new Error(objectError.loginwrongSymbol);
+    } else throw new Error(objectError.loginNull);
+
+    // проверка для поля пароль
+    if (request.body.password) {
+      const passwordString = JSON.stringify(request.body.password);
+      if (
+        passwordString.includes("<script>") ||
+        passwordString.includes("</script>")
+      )
+        throw new Error(objectError.scriptNone);
+      if (
+        passwordString.includes("<") ||
+        passwordString.includes(">") ||
+        passwordString.includes(" ")
+      )
+        throw new Error(objectError.passwordWrongSymbol);
+    } else throw new Error(objectError.passwordNull);
+
+    // проверка логина на нахождение в таблице
+    let answerExistLogin = await selectQueryFactory(
+      connection,
+      `select * from usersdata where login =?;`,
+      [request.body.login]
+    );
+    if (answerExistLogin.length === 0) {
+      throw new Error(objectError.loginPasswordPairNotExist);
+    } else {
+      const passwordCompare = await bcrypt.compare(
+        request.body.password,
+        answerExistLogin[0].password
+      );
+      if (passwordCompare) {
+        createTokenAndWriteToDB(request.body.login, connection, response);
+      } else {
+        throw new Error(objectError.loginPasswordPairNotExist);
+      }
+    }
+  } catch (error) {
+    response.redirect(
+      302,
+      `/main/entry/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
+  }
+});
+
+// создание сессионного ключа и запись в сессию
+const createTokenAndWriteToDB = async (login, connection, response) => {
+  const payload = { username: login };
+  const token = jwt.sign(payload, secretKeyTwo, { expiresIn: "2h" });
+  let insertToSessionTab = await selectQueryFactory(
+    connection,
+    `INSERT INTO sessionsdata (login, jwt_access)
+      VALUES(?, ?);`,
+    [login, token]
+  );
+  if (insertToSessionTab === "успех") {
+    let getDataFromSessionTab = await selectQueryFactory(
+      connection,
+      `select * from sessionsdata where jwt_access =?;`,
+      [token]
+    );
+    const objectToClient = getDataFromSessionTab[0];
+    response.status(200).send(`${JSON.stringify(objectToClient)}`);
+  }
+};
+
+webserver.use((request, response, next) => {
+  try {
+    const authHeader = request.headers.authorization;
+    if (!authHeader) {
+      return response.redirect(302, `/main/entry`);
+    }
+    const token = authHeader.split(" ")[1];
+    jwt.verify(token, secretKeyTwo, (err, user) => {
+      if (err) {
+        return response.redirect(302, `/main/entry`);
+      } else {
+        return next();
+      }
+    });
+  } catch (error) {
+    response.redirect(
+      302,
+      `/main/entry/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
+  }
+});
+// аутентификация конец
+
+// переход на главную страницу
+webserver.post("/toMain", (request, response) => {
+  response.redirect(302, `/main`);
+});
 
 // отправляем данные для выгрузки листа загруженных файлов
 webserver.post("/openMarker", function (request, response) {
@@ -189,55 +557,6 @@ webserver.post("/download", function (request, response) {
 // начинаем прослушивать подключения на 7681 порту и создаем константу для апгрейда экспресса и вебсокета
 const s = webserver.listen(7681);
 
-// функция чтения и записи
-const readAndWrite = (object, path) => {
-  fs.readFile(`${path}/upload.json`, "utf8", function (error, fileContent) {
-    if (error) throw error;
-    const newObj = JSON.parse(fileContent);
-    newObj[object.filename] = {};
-    newObj[object.filename].comment = object.comment;
-    newObj[object.filename].file = object.file;
-    newObj[object.filename].id = object.id;
-    const fileStream = fs.createWriteStream(`${path}/upload.json`);
-    fileStream.write(JSON.stringify(newObj));
-    fileStream.end(messageToClientSuccessWrite(object));
-    fileStream.on("error", (err) => {
-      console.error("Ошибка при записи файла:", err);
-      messageToclientErrorWrite(object);
-    });
-  });
-};
-
-// если нет директории, то создает и записывает
-const createFileAndWrite = (object, path) => {
-  fs.stat(`${path}/upload.json`, function (err, stat) {
-    const newObj = {};
-    newObj[object.filename] = {};
-    newObj[object.filename].comment = object.comment;
-    newObj[object.filename].file = object.file;
-    newObj[object.filename].id = object.id;
-    if (err) {
-      const fileStream = fs.createWriteStream(`${path}/upload.json`);
-      fileStream.write(JSON.stringify(newObj));
-      fileStream.end(messageToClientSuccessWrite(object));
-      fileStream.on("error", (err) => {
-        console.error("Ошибка при записи файла:", err);
-        messageToclientErrorWrite(object);
-      });
-    }
-  });
-};
-
-// предварительный обработчик ошибок вебсокета
-const onSocketPreError = (error = Error) => {
-  console.log(error);
-};
-
-// дополнительный обработчик ошибок вебсокета
-const onSocketPostError = (error = Error) => {
-  console.log(error);
-};
-
 // создаем вебсокет на одном порту с экспрессом
 const server = new WebSocket.Server({ noServer: true });
 
@@ -293,65 +612,33 @@ server.on("connection", (ws, request) => {
   });
 });
 
-// сообщение клиенту
-const messageToclient = (object) => {
-  activeClients.forEach((client) => {
-    if (
-      client.readyState === WebSocket.OPEN &&
-      client.uniqueID === object.websocketId
-    ) {
-      client.lastkeepalive = Date.now();
-      client.send(JSON.stringify(object));
-    }
+// работа с БД
+// возвращает соединение с БД, взятое из пула соединений
+function newConnectionFactory(pool, response) {
+  return new Promise((resolve, reject) => {
+    pool.getConnection(function (err, connection) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(connection);
+      }
+    });
   });
-};
+}
 
-// отправка сообщения в случае успешной записи файла
-const messageToClientSuccessWrite = (object) => {
-  activeClients.forEach((client) => {
-    if (
-      client.readyState === WebSocket.OPEN &&
-      client.uniqueID === object.websocketid
-    ) {
-      client.lastkeepalive = Date.now();
-      const objectToClient = {};
-      objectToClient.websocketId = client.uniqueID;
-      objectToClient.message = "Запись завершена на 100";
-      client.send(JSON.stringify(objectToClient));
-      objectToClient.message = "Передача и запись данных успешно завершена";
-      client.send(JSON.stringify(objectToClient));
-    }
+// выполняет SQL-запрос на чтение, возвращает массив прочитанных строк
+function selectQueryFactory(connection, queryText, queryValues, response) {
+  return new Promise((resolve, reject) => {
+    connection.query(queryText, queryValues, function (err, results, fields) {
+      if (err) {
+        reject(err);
+      } else {
+        if (fields === undefined) {
+          resolve("успех");
+        } else {
+          resolve(results);
+        }
+      }
+    });
   });
-};
-
-// отправка сообщения в случае ошибки
-const messageToclientErrorWrite = (object) => {
-  activeClients.forEach((client) => {
-    if (
-      client.readyState === WebSocket.OPEN &&
-      client.uniqueID === object.websocketid
-    ) {
-      client.lastkeepalive = Date.now();
-      const objectToClient = {};
-      objectToClient.websocketId = client.uniqueID;
-      objectToClient.message = "Передача и запись данных завершилась неудачно";
-      client.send(JSON.stringify(objectToClient));
-    }
-  });
-};
-
-// отпправка сообщения из экспресса
-const messageToClientFromExpress = (object, message) => {
-  activeClients.forEach((client) => {
-    if (
-      client.readyState === WebSocket.OPEN &&
-      client.uniqueID === object.websocketid
-    ) {
-      client.lastkeepalive = Date.now();
-      const objectToClient = {};
-      objectToClient.websocketId = client.uniqueID;
-      objectToClient.message = message;
-      client.send(JSON.stringify(objectToClient));
-    }
-  });
-};
+}

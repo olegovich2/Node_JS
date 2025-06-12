@@ -72,9 +72,10 @@ export const manualControlFieldMarker = (event) => {
 };
 
 const objectForRequests = (id) => {
+  let login = JSON.parse(localStorage.getItem("user")).login;
   const object = {};
   object.id = id;
-  object.pathToFile = `upload/${localStorage.getItem("user")}/upload.json`;
+  object.pathToFile = `upload/${login}/upload.json`;
   return object;
 };
 

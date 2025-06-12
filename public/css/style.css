@@ -4,6 +4,28 @@ body {
     padding: 0;
 }
 
+.containerForExit{
+    display: grid;
+    grid-template-columns: 80% 100px;
+    background-color: rgb(8, 16, 16);
+}
+
+.containerForExit h3 {
+    color: rgb(255, 255, 255);
+}
+
+.greeting {
+    width: 100%;
+    margin: 10px 0;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+h3 {
+    width: 100%;
+    text-align: center;
+}
+
 .base {
     display: grid;
     grid-template-rows: 1fr;
@@ -15,6 +37,36 @@ body {
 .formForUploadOnServer {
     display: grid;
     grid-template-rows: 1fr;
+}
+
+.formForAuth,
+.formforEntry {
+    margin: 15px 0;
+    width: 100%;
+}
+
+.fields {
+    display: grid;
+    grid-template-columns: 20% 40% 1fr;
+    margin: 10px 0;
+}
+
+.input {
+    height: 30px;
+    margin: 10px 0;
+    border: none;
+}
+
+.formForAuth button,
+.formforEntry button {
+    padding: 5px;
+    margin: 0 40%;
+    min-width: 100px;
+    border: none;
+    background-color: white;
+    font-size: 15px;
+    border-radius: 15px;
+    border-bottom: 2px solid black;
 }
 
 .result {
@@ -76,4 +128,40 @@ button:active {
 
 .unvisible {
     display:none;
+}
+
+.errors {
+    border: 2px solid red;
+}
+
+.errors_p {
+    padding: 10px;
+    color: red;
+}
+
+.success {
+    border: 2px solid green;
+}
+
+.simply {
+    border: 2px solid rgb(154, 13, 248);
+}
+
+.medium {
+    border: 2px solid rgb(1, 118, 150);
+}
+
+.simply_p {
+    padding: 10px;
+    color: rgb(154, 13, 248);
+}
+
+.medium_p {
+    padding: 10px;
+    color: rgb(1, 118, 150);
+}
+
+.success_p {
+    padding: 10px;
+    color: green;
 }

@@ -3,13 +3,15 @@ import { postDataForFileField, downloadFileToServer } from "./requests.js";
 export const progressBar = document.querySelector(".progress-bar-inner");
 export const progressBarContainer = document.querySelector(".progress-bar");
 export let connection;
+const divGreeting = document.querySelector('[data-div="greeting"]');
 
 export const reconnect = (object, websocketId) => {
+  let login = JSON.parse(localStorage.getItem("user")).login;
   if (connection) {
     connection.close(1000, "Предыдущее соединение с сервером закрыто"); // Закрываем предыдущее соединение
   }
-  // const url = "ws://178.172.195.18:7681";
-  const url1 = "ws://localhost:7681";
+  const url = "ws://178.172.195.18:7681";
+  // const url1 = "ws://localhost:7681";
   connection = new WebSocket(url1);
   let string = JSON.stringify(object);
   const objectForMessage = {};
@@ -43,7 +45,7 @@ export const reconnect = (object, websocketId) => {
         "write"
       );
     } else if (objectFromServer.message === "Соединение установлено") {
-      objectFromServer.message = localStorage.getItem("user");
+      objectFromServer.message = login;
       connection.send(JSON.stringify(objectFromServer));
     } else if (objectFromServer.message === "Получено название директории") {
       downloadFileToServer("/downloadToServer", string);
@@ -58,25 +60,36 @@ export const reconnect = (object, websocketId) => {
     console.log(
       `Соединение закрыто. Код: ${event.code}, причина: ${event.reason}`
     );
-    sendPath();
+    sendPath(login);
   };
 };
 
 document.addEventListener("DOMContentLoaded", () => {
   if (localStorage.getItem("user")) {
-    alert(`Добро пожаловать, ${localStorage.getItem("user")}`);
-    sendPath();
+    let login = JSON.parse(localStorage.getItem("user")).login;
+    divGreeting.innerHTML = `Добро пожаловать, ${login}`;
+    sendPath(login);
   } else {
-    let nameUser = prompt("Как Вас зовут?");
-    localStorage.setItem("user", nameUser);
-    alert(`Добро пожаловать, ${nameUser}`);
-    sendPath();
+    redirectToEntry();
   }
 });
 
-const sendPath = () => {
+const intervalId = setInterval(() => {
+  if (localStorage.getItem("user") === null) {
+    redirectToEntry();
+    clearInterval(intervalId);
+  }
+}, 1000);
+
+const redirectToEntry = () => {
+  const link = document.createElement("a");
+  link.href = "/main/entry";
+  link.click();
+};
+
+const sendPath = (login) => {
   const object = {};
-  object.pathToFile = `upload/${localStorage.getItem("user")}/upload.json`;
+  object.pathToFile = `upload/${login}/upload.json`;
   postDataForFileField("/openmarker", JSON.stringify(object));
   if (!progressBarContainer.classList.contains("unvisible"))
     progressBarContainer.classList.add("unvisible");
