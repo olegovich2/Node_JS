@@ -201,8 +201,8 @@ webserver.post("/main/auth/variants", async function (request, response) {
           from: "trmailforupfile@gmail.com",
           to: `${request.body.email}`,
           subject: "Завершение авторизации",
-          html: `<p>Для завершения авторизации - перейдите по ссылке:</p><br><p><a href="${url}/main/auth/final?token=${(request.query.token =
-            token)}">${url}/main/auth/final?token=${token}</a></p>`,
+          html: `<p>Для завершения авторизации - перейдите по ссылке:</p><br><p><a href="http://178.172.195.18:7681/main/auth/final?token=${(request.query.token =
+            token)}">http://178.172.195.18:7681/main/auth/final?token=${token}</a></p>`,
         };
         transporter.sendMail(mailOptions, (error, info) => {
           if (error) {
@@ -278,6 +278,8 @@ webserver.get("/main/auth/success", function (request, response) {
 // обработчик страницы финальной авторизации
 webserver.get("/main/auth/final", async function (request, response) {
   let connection = null;
+  console.log("here");
+
   try {
     connection = await newConnectionFactory(pool, response);
     if (request.query.token) {
