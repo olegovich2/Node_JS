@@ -208,7 +208,6 @@ webserver.post("/main/auth/variants", async function (request, response) {
           if (error) {
             response.redirect(302, `/main/auth/error?errorMessage=${error}`);
           } else {
-            response.setHeader("Access-Control-Allow-Origin", "*");
             response.redirect(
               302,
               `/main/auth/success?login=${(request.query.login =
@@ -218,7 +217,8 @@ webserver.post("/main/auth/variants", async function (request, response) {
         });
       }
     } else {
-      response.setHeader("Access-Control-Allow-Origin", "*");
+      response.setHeader("Content-Type", "text/html");
+      response.setHeader("Cache-Control", "no-cache");
       response.status(200).send(`${newPage}`);
     }
   } catch (error) {
@@ -234,14 +234,14 @@ webserver.post("/main/auth/variants", async function (request, response) {
 webserver.get("/main/auth/error", function (request, response) {
   try {
     if (request.query.errorMessage) {
-      response.setHeader("Content-Type", "text/html");
-      response.setHeader("Cache-Control", "no-store");
       // создание html ошибки
       let errorPage = objectForCreateDom.htmlError;
       errorPage = errorPage.replace(
         "$[status]",
         `${request.query.errorMessage}`
       );
+      response.setHeader("Content-Type", "text/html");
+      response.setHeader("Cache-Control", "no-store");
       response.status(200).send(`${errorPage}`);
     } else {
       throw new Error(objectError.errorUndefined);
@@ -258,11 +258,11 @@ webserver.get("/main/auth/error", function (request, response) {
 webserver.get("/main/auth/success", function (request, response) {
   try {
     if (request.query.login) {
-      response.setHeader("Content-Type", "text/html");
-      response.setHeader("Cache-Control", "no-store");
       // создание html успеха
       let successPage = objectForCreateDom.htmlSuccess;
       successPage = successPage.replace("$[login]", `${request.query.login}`);
+      response.setHeader("Content-Type", "text/html");
+      response.setHeader("Cache-Control", "no-store");
       response.status(200).send(`${successPage}`);
     } else {
       throw new Error(objectError.errorUndefined);
@@ -278,8 +278,6 @@ webserver.get("/main/auth/success", function (request, response) {
 // обработчик страницы финальной авторизации
 webserver.get("/main/auth/final", async function (request, response) {
   let connection = null;
-  console.log("here");
-
   try {
     connection = await newConnectionFactory(pool, response);
     if (request.query.token) {
@@ -291,10 +289,7 @@ webserver.get("/main/auth/final", async function (request, response) {
         [request.query.token]
       );
       if (answerUpdate === "успех") {
-        response.setHeader("Access-Control-Allow-Origin", "*");
         response.redirect(302, `/main/entry`);
-      } else {
-        console.log(answerUpdate);
       }
     }
   } catch (error) {
@@ -323,14 +318,14 @@ webserver.get("/main/entry", async function (request, response) {
 webserver.get("/main/entry/error", function (request, response) {
   try {
     if (request.query.errorMessage) {
-      response.setHeader("Content-Type", "text/html");
-      response.setHeader("Cache-Control", "no-store");
       // создание html ошибки
       let errorPage = objectForCreateDom.htmlErrorTwo;
       errorPage = errorPage.replace(
         "$[status]",
         `${request.query.errorMessage}`
       );
+      response.setHeader("Content-Type", "text/html");
+      response.setHeader("Cache-Control", "no-store");
       response.status(200).send(`${errorPage}`);
     } else {
       throw new Error(objectError.errorUndefined);
@@ -465,20 +460,20 @@ webserver.post("/openMarker", function (request, response) {
         "utf8",
         function (error, fileContent) {
           if (error) {
-            response.setHeader("Content-Type", "application/json");
-            response.setHeader("Cache-Control", "no-store");
             const object = {};
             object.text = `На сервере пока ничего не сохранено`;
-            response.status(200).send(`${JSON.stringify(object)}`);
-          } else {
             response.setHeader("Content-Type", "application/json");
             response.setHeader("Cache-Control", "no-store");
+            response.status(200).send(`${JSON.stringify(object)}`);
+          } else {
             const object = JSON.parse(fileContent);
             for (const key in object) {
               if (object.hasOwnProperty(key)) {
                 delete object[key].file;
               }
             }
+            response.setHeader("Content-Type", "application/json");
+            response.setHeader("Cache-Control", "no-store");
             response.status(200).send(`${JSON.stringify(object)}`);
           }
         }
