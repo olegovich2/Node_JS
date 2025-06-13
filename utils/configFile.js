@@ -1,5 +1,5 @@
 const poolConfig = {
-  connectionLimit: 2,
+  connectionLimit: 10,
   host: "localhost",
   user: "root",
   // password: "M3x6_rx8rx7",

@@ -195,8 +195,8 @@ webserver.post("/main/auth/variants", async function (request, response) {
         [request.body.login, hashPass, request.body.email, token, "false"]
       );
       if (answerInsert === "успех") {
-        // 178.172.195.18:7681
-        // localhost:7681
+        // 178.172.195.18
+        // localhost
         const mailOptions = {
           from: "trmailforupfile@gmail.com",
           to: `${request.body.email}`,
@@ -227,6 +227,8 @@ webserver.post("/main/auth/variants", async function (request, response) {
       302,
       `/main/auth/error?errorMessage=${(request.query.errorMessage = error)}`
     );
+  } finally {
+    connection.release();
   }
 });
 
@@ -297,6 +299,8 @@ webserver.get("/main/auth/final", async function (request, response) {
       302,
       `/main/auth/error?errorMessage=${(request.query.errorMessage = error)}`
     );
+  } finally {
+    connection.release();
   }
 });
 
@@ -342,7 +346,7 @@ webserver.get("/main/entry/error", function (request, response) {
 webserver.post("/entryData", async function (request, response) {
   let connection = null;
   try {
-    connection = await newConnectionFactory(pool, response);
+    connection = await newConnectionFactory(pool);
     // валидация поля логин
     if (request.body.login) {
       const loginString = JSON.stringify(request.body.login);
@@ -397,6 +401,8 @@ webserver.post("/entryData", async function (request, response) {
       302,
       `/main/entry/error?errorMessage=${(request.query.errorMessage = error)}`
     );
+  } finally {
+    connection.release();
   }
 });
 
@@ -613,7 +619,7 @@ server.on("connection", (ws, request) => {
 
 // работа с БД
 // возвращает соединение с БД, взятое из пула соединений
-function newConnectionFactory(pool, response) {
+function newConnectionFactory(pool) {
   return new Promise((resolve, reject) => {
     pool.getConnection(function (err, connection) {
       if (err) {
@@ -626,16 +632,19 @@ function newConnectionFactory(pool, response) {
 }
 
 // выполняет SQL-запрос на чтение, возвращает массив прочитанных строк
-function selectQueryFactory(connection, queryText, queryValues, response) {
+function selectQueryFactory(connection, queryText, queryValues) {
   return new Promise((resolve, reject) => {
     connection.query(queryText, queryValues, function (err, results, fields) {
       if (err) {
         reject(err);
+        connection.release();
       } else {
         if (fields === undefined) {
           resolve("успех");
+          connection.release();
         } else {
           resolve(results);
+          connection.release();
         }
       }
     });
