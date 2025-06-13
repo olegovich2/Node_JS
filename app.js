@@ -131,9 +131,9 @@ webserver.get("/main/auth", function (request, response) {
 
 // аутентификация-валидация-токен-почта
 webserver.post("/main/auth/variants", async function (request, response) {
-  let connection = null;
+  let connectionSQL = null;
   try {
-    connection = await newConnectionFactory(pool, response);
+    connectionSQL = await newConnectionFactory(pool);
     // проверка для поля логин
     if (request.body.login) {
       // валидация поля логин
@@ -150,10 +150,11 @@ webserver.post("/main/auth/variants", async function (request, response) {
 
       // проверка логина на уникальность
       let answer = await selectQueryFactory(
-        connection,
+        connectionSQL,
         `select * from usersdata where login =?;`,
         [request.body.login]
       );
+      connectionSQL.release();
       if (answer.length > 0) {
         throw new Error(objectError.loginAlreadyExists);
       }
@@ -188,8 +189,9 @@ webserver.post("/main/auth/variants", async function (request, response) {
       const hashPass = await bcrypt.hash(request.body.password, salt);
       const payload = { username: request.body.login };
       const token = jwt.sign(payload, secretKey, { expiresIn: "366d" });
+      connectionSQL = await newConnectionFactory(pool);
       let answerInsert = await selectQueryFactory(
-        connection,
+        connectionSQL,
         `INSERT INTO usersdata (login, password, email, jwt, logic)
       VALUES(?, ?, ?, ?, ?);`,
         [request.body.login, hashPass, request.body.email, token, "false"]
@@ -228,7 +230,7 @@ webserver.post("/main/auth/variants", async function (request, response) {
       `/main/auth/error?errorMessage=${(request.query.errorMessage = error)}`
     );
   } finally {
-    connection.release();
+    connectionSQL.release();
   }
 });
 
@@ -279,12 +281,12 @@ webserver.get("/main/auth/success", function (request, response) {
 
 // обработчик страницы финальной авторизации
 webserver.get("/main/auth/final", async function (request, response) {
-  let connection = null;
+  let connectionSQL = null;
   try {
-    connection = await newConnectionFactory(pool, response);
+    connectionSQL = await newConnectionFactory(pool);
     if (request.query.token) {
       let answerUpdate = await selectQueryFactory(
-        connection,
+        connectionSQL,
         `UPDATE usersdata
      SET logic = REPLACE(logic, 'false', 'true')
      WHERE jwt =?;`,
@@ -300,7 +302,7 @@ webserver.get("/main/auth/final", async function (request, response) {
       `/main/auth/error?errorMessage=${(request.query.errorMessage = error)}`
     );
   } finally {
-    connection.release();
+    connectionSQL.release();
   }
 });
 
@@ -344,9 +346,9 @@ webserver.get("/main/entry/error", function (request, response) {
 
 // валидация входа, создание сессии
 webserver.post("/entryData", async function (request, response) {
-  let connection = null;
+  let connectionSQL = null;
   try {
-    connection = await newConnectionFactory(pool);
+    connectionSQL = await newConnectionFactory(pool);
     // валидация поля логин
     if (request.body.login) {
       const loginString = JSON.stringify(request.body.login);
@@ -379,10 +381,11 @@ webserver.post("/entryData", async function (request, response) {
 
     // проверка логина на нахождение в таблице
     let answerExistLogin = await selectQueryFactory(
-      connection,
+      connectionSQL,
       `select * from usersdata where login =?;`,
       [request.body.login]
     );
+    connectionSQL.release();
     if (answerExistLogin.length === 0) {
       throw new Error(objectError.loginPasswordPairNotExist);
     } else {
@@ -391,7 +394,7 @@ webserver.post("/entryData", async function (request, response) {
         answerExistLogin[0].password
       );
       if (passwordCompare) {
-        createTokenAndWriteToDB(request.body.login, connection, response);
+        createTokenAndWriteToDB(request.body.login, connectionSQL, response);
       } else {
         throw new Error(objectError.loginPasswordPairNotExist);
       }
@@ -402,28 +405,38 @@ webserver.post("/entryData", async function (request, response) {
       `/main/entry/error?errorMessage=${(request.query.errorMessage = error)}`
     );
   } finally {
-    connection.release();
+    connectionSQL.release();
   }
 });
 
 // создание сессионного ключа и запись в сессию
-const createTokenAndWriteToDB = async (login, connection, response) => {
-  const payload = { username: login };
-  const token = jwt.sign(payload, secretKeyTwo, { expiresIn: "2h" });
-  let insertToSessionTab = await selectQueryFactory(
-    connection,
-    `INSERT INTO sessionsdata (login, jwt_access)
+const createTokenAndWriteToDB = async (login, connectionSQL, response) => {
+  try {
+    connectionSQL = await newConnectionFactory(pool);
+    const payload = { username: login };
+    const token = jwt.sign(payload, secretKeyTwo, { expiresIn: "2h" });
+    let insertToSessionTab = await selectQueryFactory(
+      connectionSQL,
+      `INSERT INTO sessionsdata (login, jwt_access)
       VALUES(?, ?);`,
-    [login, token]
-  );
-  if (insertToSessionTab === "успех") {
-    let getDataFromSessionTab = await selectQueryFactory(
-      connection,
-      `select * from sessionsdata where jwt_access =?;`,
-      [token]
+      [login, token]
     );
-    const objectToClient = getDataFromSessionTab[0];
-    response.status(200).send(`${JSON.stringify(objectToClient)}`);
+    connectionSQL.release();
+    if (insertToSessionTab === "успех") {
+      connectionSQL = await newConnectionFactory(pool);
+      let getDataFromSessionTab = await selectQueryFactory(
+        connectionSQL,
+        `select * from sessionsdata where jwt_access =?;`,
+        [token]
+      );
+      const objectToClient = getDataFromSessionTab[0];
+      response.status(200).send(`${JSON.stringify(objectToClient)}`);
+    }
+  } catch (error) {
+    response.redirect(
+      302,
+      `/main/entry/error?errorMessage=${(request.query.errorMessage = error)}`
+    );
   }
 };
 
@@ -637,14 +650,11 @@ function selectQueryFactory(connection, queryText, queryValues) {
     connection.query(queryText, queryValues, function (err, results, fields) {
       if (err) {
         reject(err);
-        connection.release();
       } else {
         if (fields === undefined) {
           resolve("успех");
-          connection.release();
         } else {
           resolve(results);
-          connection.release();
         }
       }
     });
