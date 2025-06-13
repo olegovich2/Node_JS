@@ -15,8 +15,6 @@ const { transporter } = require("./utils/configFile");
 const { validateEmail } = require("./utils/functions");
 const { docHtml } = require("./utils/functions");
 let pool = mysql.createPool(poolConfig);
-const url = "http://178.172.195.18:7681";
-// const url1 = "http://localhost:7681";
 
 // переменные websocket
 let directory = ""; //название директории для изменения файла
@@ -197,6 +195,8 @@ webserver.post("/main/auth/variants", async function (request, response) {
         [request.body.login, hashPass, request.body.email, token, "false"]
       );
       if (answerInsert === "успех") {
+        // 178.172.195.18:7681
+        // localhost:7681
         const mailOptions = {
           from: "trmailforupfile@gmail.com",
           to: `${request.body.email}`,
@@ -287,12 +287,14 @@ webserver.get("/main/auth/final", async function (request, response) {
         connection,
         `UPDATE usersdata
      SET logic = REPLACE(logic, 'false', 'true')
-     WHERE jwt = ?;`,
+     WHERE jwt =?;`,
         [request.query.token]
       );
       if (answerUpdate === "успех") {
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.redirect(302, `/main/entry`);
+      } else {
+        console.log(answerUpdate);
       }
     }
   } catch (error) {
