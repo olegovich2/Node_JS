@@ -197,8 +197,6 @@ webserver.post("/main/auth/variants", async function (request, response) {
         [request.body.login, hashPass, request.body.email, token, "false"]
       );
       if (answerInsert === "успех") {
-        // 178.172.195.18
-        // localhost
         const mailOptions = {
           from: "trmailforupfile@gmail.com",
           to: `${request.body.email}`,
