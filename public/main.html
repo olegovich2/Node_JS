@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en, ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickDiagnosis</title>
+    <link
+        href="https://fonts.googleapis.com/css?family=Montserrat:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&display=swap&subset=cyrillic"
+        rel="stylesheet">
+    <link href="/css/style.css" type="text/css" rel="stylesheet" />
+    <script src="https://kit.fontawesome.com/d23624fc6e.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <header class="header">
+        <img class="svg_param" src="./images/icon.png" alt="иконка" title="иконка">
+        <h1>QUICK DIAGNOSIS</h1>
+        <div class="buttonsLogin" data-container="buttons">
+            <button class="personal_account" type="button" data-button="toAccount">
+                <i class="fa-solid fa-receipt"></i>
+            </button>
+            <button class="exit_button" type="button" data-button="toEntry">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </header>
+    <nav class="navbar" data-nav="allTabs">
+        <ul class="navlist">
+            <li data-list="general">Опрос по всем системам</li>
+            <li data-list="respiratory">Дыхательная система</li>
+            <li data-list="cardiovascular">Сердечно-сосудистая система</li>
+            <li data-list="digestive">Пищеварительная система</li>
+            <li data-list="urinary">Мочевыделительная система</li>
+            <li data-list="musculoskeletal">Опорно-двигательная система</li>
+        </ul>
+    </nav>
+    <main class="main" data-main="mainElement">
+        <section class="forms_content unvisible" id="general">
+            <form data-form="general">Опрос по всем системам в разработке</form>
+        </section>
+        <section class="forms_content unvisible" id="respiratory">
+            <form data-form="respiratory">
+                <fieldset data-fieldset="nameSurname">
+                    <legend>Фамилия Имя Отчество</legend>
+                    <input class="input_length" type="input" id="nameSurname" name="nameSurname"
+                        placeholder="Фамилия Имя Отчество" />
+                </fieldset>
+                <fieldset data-fieldset="age">
+                    <legend>Полных лет</legend>
+                    <input type="input" id="age" name="age" placeholder="Например: 24" />
+                </fieldset>
+                <fieldset data-fieldset="temperature">
+                    <legend>Температура</legend>
+                    <input type="input" id="temperature" name="temperature" placeholder="Например: 37.8" />
+                </fieldset>
+                <fieldset data-fieldset="weightBody">
+                    <legend>Вес</legend>
+                    <input type="input" id="weightBody" name="weightBody" placeholder="Например: 51" />
+                </fieldset>
+                <fieldset data-fieldset="soreThroat">
+                    <legend>Боль в горле</legend>
+                    <input type="radio" id="soreThroatNone" name="soreThroat" value="0" checked />
+                    <label for="soreThroatNone">Нет</label>
+                    <input type="radio" id="soreThroatYes" name="soreThroat" value="1" />
+                    <label for="soreThroatYes">Да</label>
+                </fieldset>
+                <fieldset data-fieldset="plaquesTonsils">
+                    <legend>Налеты на миндалинах</legend>
+                    <input type="radio" id="plaquesTonsilsNone" name="plaquesTonsils" value="0" checked />
+                    <label for="plaquesTonsilsNone">Нет</label>
+                    <input type="radio" id="plaquesTonsilsYes" name="plaquesTonsils" value="1" />
+                    <label for="plaquesTonsilsYes">Да</label>
+                </fieldset>
+                <fieldset data-fieldset="runnyNose">
+                    <legend>Насморк</legend>
+                    <input type="radio" id="runnyNoseNone" name="runnyNose" value="0" checked />
+                    <label for="runnyNoseNone">Нет</label>
+                    <input type="radio" id="runnyNoseYes" name="runnyNose" value="1" />
+                    <label for="runnyNoseYes">Да</label>
+                </fieldset>
+                <fieldset data-fieldset="pollinosis">
+                    <legend>Есть ли у Вас аллергическая реакция на цветение растений, на пыль, на домашних животных?
+                    </legend>
+                    <input type="radio" id="pollinosisNone" name="pollinosis" value="0" checked />
+                    <label for="pollinosisNone">Нет</label>
+                    <input type="radio" id="pollinosisYes" name="pollinosis" value="1" />
+                    <label for="pollinosisYes">Да</label>
+                </fieldset>
+                <fieldset data-fieldset="cough">
+                    <legend>Кашель</legend>
+                    <input type="radio" id="coughNone" name="cough" value="0" checked />
+                    <label for="coughNone">Нет</label>
+                    <input type="radio" id="coughDry" name="cough" value="1" />
+                    <label for="coughDry">Сухой</label>
+                    <input type="radio" id="coughWet" name="cough" value="2" />
+                    <label for="coughWet">Влажный</label>
+                </fieldset>
+                <fieldset data-fieldset="dyspnoea">
+                    <legend>Число дыханий</legend>
+                    <input type="input" id="dyspnoea" name="dyspnoea" placeholder="Число вдохов за минуту" />
+                </fieldset>
+                <fieldset data-fieldset="sputum">
+                    <legend>Мокрота</legend>
+                    <input type="radio" id="sputumNone" name="sputum" value="0" checked />
+                    <label for="sputumNone">Нет</label>
+                    <input type="radio" id="sputumWhite" name="sputum" value="1" />
+                    <label for="sputumWhite">Мокрота прозрачная или белая</label>
+                    <input type="radio" id="sputumBacterial" name="sputum" value="2" />
+                    <label for="sputumBacterial">Мокрота желтая, зеленоватая и их оттенки</label>
+                </fieldset>
+                <fieldset data-fieldset="hemoptysis">
+                    <legend>Кровохарканье</legend>
+                    <input type="radio" id="hemoptysisNone" name="hemoptysis" value="0" checked />
+                    <label for="hemoptysisNone">Нет</label>
+                    <input type="radio" id="hemoptysisPink" name="hemoptysis" value="1" />
+                    <label for="hemoptysisPink">Мокрота розовая, или прожилки крови в мокроте</label>
+                    <input type="radio" id="hemoptysisBlood" name="hemoptysis" value="2" />
+                    <label for="hemoptysisBlood">Алая кровь при кашле</label>
+                </fieldset>
+                <fieldset data-fieldset="chestPainBreathing">
+                    <legend>Боль в грудной клетке при дыхании</legend>
+                    <input type="radio" id="chestPainBreathingNone" name="chestPainBreathing" value="0" checked />
+                    <label for="chestPainBreathingNone">Нет</label>
+                    <input type="radio" id="chestPainBreathingYes" name="chestPainBreathing" value="1" />
+                    <label for="chestPainBreathingYes">Да</label>
+                </fieldset>
+                <fieldset data-fieldset="daysDisease">
+                    <legend>Сколько дней болеете?</legend>
+                    <input type="input" id="daysDisease" name="daysDisease" placeholder="Например: 15" />
+                </fieldset>
+                <fieldset data-fieldset="frequentPneumonia">
+                    <legend>Вы ранее болели пневмонией?</legend>
+                    <input type="radio" id="frequentPneumoniaNone" name="frequentPneumonia" value="0" checked />
+                    <label for="frequentPneumoniaNone">Нет</label>
+                    <input type="radio" id="frequentPneumoniaYes" name="frequentPneumonia" value="1" />
+                    <label for="frequentPneumoniaYes">Да</label>
+                </fieldset>
+                <fieldset data-fieldset="bronchialAsthmaAnamnesis">
+                    <legend>Выставлен ли у родственников диагноз: "Бронхиальная астма"?</legend>
+                    <input type="radio" id="bronchialAsthmaAnamnesisNone" name="bronchialAsthmaAnamnesis" value="0"
+                        checked />
+                    <label for="bronchialAsthmaAnamnesisNone">Нет</label>
+                    <input type="radio" id="bronchialAsthmaAnamnesisYes" name="bronchialAsthmaAnamnesis" value="1" />
+                    <label for="bronchialAsthmaAnamnesisYes">Да</label>
+                </fieldset>
+                <fieldset data-fieldset="bronchialAsthmaConfirmed">
+                    <legend>Выставлен ли у Вас диагноз: "Бронхиальная астма"?</legend>
+                    <input type="radio" id="bronchialAsthmaConfirmedNone" name="bronchialAsthmaConfirmed" value="0"
+                        checked />
+                    <label for="bronchialAsthmaConfirmedNone">Нет</label>
+                    <input type="radio" id="bronchialAsthmaConfirmedYes" name="bronchialAsthmaConfirmed" value="1" />
+                    <label for="bronchialAsthmaConfirmedYes">Да</label>
+                </fieldset>
+                <fieldset data-fieldset="asthmaAttacks">
+                    <legend>Были ли у Вас приступы удушья?</legend>
+                    <input type="radio" id="asthmaAttacksNone" name="asthmaAttacks" value="0" checked />
+                    <label for="asthmaAttacksNone">Нет</label>
+                    <input type="radio" id="asthmaAttacksYes" name="asthmaAttacks" value="1" />
+                    <label for="asthmaAttacksYes">Да</label>
+                </fieldset>
+                <fieldset data-fieldset="smoking">
+                    <legend>Табакокурение</legend>
+                    <input type="radio" id="smokingNone" name="smoking" value="0" checked />
+                    <label for="smokingNone">Нет</label>
+                    <input type="radio" id="smokingYes" name="smoking" value="5" />
+                    <label for="smokingYes">Да</label>
+                </fieldset>
+                <fieldset data-fieldset="powder">
+                    <legend>Работа на производстве, где присутствует пыль или аэрозоль(металлообработка, окрашивание,
+                        фасовка удобрений, деревообработка и др.)</legend>
+                    <input type="radio" id="powderNone" name="powder" value="0" checked />
+                    <label for="powderNone">Нет</label>
+                    <input type="radio" id="powderYes" name="powder" value="5" />
+                    <label for="powderYes">Да</label>
+                </fieldset>
+                <fieldset data-fieldset="vape">
+                    <legend>Использование систем для употребления никотина без горения</legend>
+                    <input type="radio" id="vapeNone" name="vape" value="0" checked />
+                    <label for="vapeNone">Нет</label>
+                    <input type="radio" id="vapeYes" name="vape" value="5" />
+                    <label for="vapeYes">Да</label>
+                </fieldset>
+                <button class="buttonFromAnamnesis" type="submit" data-button="respiratory">Предварительный
+                    диагноз</button>
+            </form>
+        </section>
+        <section class="forms_content unvisible" id="cardiovascular">
+            <form data-form="cardiovascular">Форма сердечно-сосудистой системы в разработке</form>
+        </section>
+        <section class="forms_content unvisible" id="digestive">
+            <form data-form="digestive">Форма пищеварительной системы в разработке</form>
+        </section>
+        <section class="forms_content unvisible" id="urinary">
+            <form data-form="urinary">Форма мочеиспускательной системы в разработке</form>
+        </section>
+        <section class="forms_content unvisible" id="musculoskeletal">
+            <form data-form="musculoskeletal">Форма опорно-двигательной системы в разработке</form>
+        </section>
+        <div class="result unvisible" id="result" data-result="resultSurvey">
+            <div id="print">
+                <div class="header_for_print">
+                    <h1>QUICK DIAGNOSIS</h1>
+                </div>
+                <h2>Результат опроса</h2>
+                <div class="content_survey">Дата и время:
+                    <p data-result="dateAndTime"></p>
+                </div>
+                <div class="content_survey">Фамилия Имя Отчество:
+                    <p data-result="name"></p>
+                </div>
+                <div class="content_survey">Возраст:
+                    <p data-result="age"></p>
+                </div>
+                <div class="content_survey">Температура:
+                    <p data-result="temperature"></p>
+                </div>
+                <div class="many_content_survey">Описание симптомов:
+                    <p data-result="overview"></p>
+                </div>
+                <div class="many_content_survey">Предварительный диагноз:
+                    <p data-result="listDiagnosis"></p>
+                </div>
+                <div class="many_content_survey">Рекомендации по обследованию:
+                    <p data-result="diagnostics"></p>
+                </div>
+                <div class="many_content_survey">Рекомендации по лечению до обращению к врачу:
+                    <p data-result="treatment"></p>
+                </div>
+                <div class="many_content_survey">Дополнительные рекомендации:
+                    <p data-result="volumeOfLiquid"></p>
+                </div>
+            </div>
+            <button class="buttonFromAnamnesis" type="button" data-button="print">Печать</button>
+            <button class="buttonFromAnamnesis" type="button" data-button="saveData">Сохранить в Личном
+                кабинете</button>
+            <button class="buttonFromAnamnesis" type="button" data-button="saveAs">Сохранить как Word</button>
+            <button class="buttonFromAnamnesis" type="button" data-button="closeResultSurvey">Закрыть</button>
+        </div>
+    </main>
+    <footer class="footer">
+        <h6 class="footer_content">&copy;olegovich</h6>
+    </footer>
+</body>
+<script type="module" src="/js/constants/allConstants.js"></script>
+<script type="module" src="/js/forMain/allFunctionsForWorkMain.js"></script>
+<script type="module" src="/js/forMain/requestsForSurveys.js"></script>
+<script type="module" src="/js/constants/respiratory.js"></script>
+<script type="module" src="/js/forMain/logicTab.js"></script>
+
+</html>

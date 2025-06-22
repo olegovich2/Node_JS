@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickDiagnosis</title>
+    <link
+        href="https://fonts.googleapis.com/css?family=Montserrat:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&display=swap&subset=cyrillic"
+        rel="stylesheet">
+    <link href="/css/style.css" type="text/css" rel="stylesheet" />
+    <script src="https://kit.fontawesome.com/d23624fc6e.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <header class="header">
+        <img class="svg_param" src="../images/icon.png" alt="иконка" title="иконка">
+        <h1>QUICK DIAGNOSIS</h1>
+        <div></div>
+    </header>
+    <main class="main" data-main="mainElement">
+    <div>
+        <h3>Чтобы зарегистрироваться - заполните данные полей:</h3>
+        <form class="formForAuth"method="post" action="/main/auth/variants" target="_self" data-form="auth">            
+            <div class="fields">
+                <p>Введите ваш логин:</p>
+                <input class="input" type="text" placeholder="Введите ваш логин" name="login">
+            </div>
+            <div class="fields">
+                <p>Введите ваш пароль:</p>
+                <input class="input" type="password" placeholder="Введите ваш пароль" name="password">
+            </div>
+            <div class="fields">
+                <p>Введите ваш email:</p>
+                <input class="input" type="email" placeholder="Введите ваш email" name="email">
+            </div>
+            <button class="buttonFromTemplate" type="submit">Отправить</button>
+        </form>
+    </div>
+    <div>
+        <h3>Вернуться назад:</h3>
+        <form class="formforEntry" method="GET" action="/main/entry" target="_self" data-form="toEntry">
+            <button class="buttonFromTemplate" type="submit">Назад</button>
+        </form>
+    </div>
+    </main>
+    <footer class="footer">
+        <h6 class="footer_content">&copy;olegovich</h6>
+    </footer>
+</body>
+<script type="module" src="/js/forEntryAndAuth/deleteKey.js"></script>
+</html>
