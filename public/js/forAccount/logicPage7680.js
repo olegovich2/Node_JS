@@ -168,8 +168,8 @@ export const reconnect = (object, websocketId) => {
   if (connection) {
     connection.close(1000, "Предыдущее соединение с сервером закрыто"); // Закрываем предыдущее соединение
   }
-  // const url = "ws://localhost:7681";
-  const url = "ws://178.172.195.18:7681";
+  //   const url = "ws://localhost:7680";
+  const url = "ws://178.172.195.18:7680";
   connection = new WebSocket(url);
   let string = JSON.stringify(object);
   const objectForMessage = {};

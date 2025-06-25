@@ -51,7 +51,7 @@ webserver.get("/main", function (request, response) {
 webserver.get("/main/account", function (request, response) {
   response.setHeader("Content-Type", "text/html");
   response.setHeader("Cache-Control", "no-cache");
-  response.sendFile(__dirname + "/public" + "/account.html");
+  response.sendFile(__dirname + "/public" + "/account7680.html");
 });
 
 // загрузка файлов на сервер
@@ -205,14 +205,15 @@ webserver.post("/main/auth/variants", async function (request, response) {
         [request.body.login, hashPass, request.body.email, token, "false"]
       );
       // 178.172.195.18
+      //   localhost
       if (answerInsert === "успех") {
         connectionSQL.release();
         const mailOptions = {
           from: "trmailforupfile@gmail.com",
           to: `${request.body.email}`,
           subject: "Завершение авторизации",
-          html: `<p>Для завершения авторизации - перейдите по ссылке:</p><br><p><a href="http://localhost:7681/main/auth/final?token=${(request.query.token =
-            token)}">http://localhost:7681/main/auth/final?token=${token}</a></p>`,
+          html: `<p>Для завершения авторизации - перейдите по ссылке:</p><br><p><a href="http://178.172.195.18:7681/main/auth/final?token=${(request.query.token =
+            token)}">http://178.172.195.18:7681/main/auth/final?token=${token}</a></p>`,
         };
         transporter.sendMail(mailOptions, (error, info) => {
           if (error) {
@@ -620,7 +621,7 @@ webserver.post("/toAccount", (request, response) => {
 });
 
 // начинаем прослушивать подключения на 7681 порту и создаем константу для апгрейда экспресса и вебсокета
-const s = webserver.listen(7681);
+const s = webserver.listen(7680);
 
 // создаем вебсокет на одном порту с экспрессом
 const server = new WebSocket.Server({ noServer: true });
