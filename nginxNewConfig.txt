@@ -1,0 +1,140 @@
+worker_processes  1;
+
+events {
+	worker_connections 768;
+	# multi_accept on;
+}
+
+
+http {   
+
+    upstream nodejs_backend {        
+    # server localhost:7680 max_fails=3 fail_timeout=30s;  # Первый экземпляр
+    # server localhost:7681 max_fails=3 fail_timeout=30s;  # Второй экземпляр
+    server 178.172.195.18:7680 max_fails=3 fail_timeout=30s;  # Первый экземпляр
+    server 178.172.195.18:7681 max_fails=3 fail_timeout=30s;  # Второй экземпляр
+    least_conn;  # Распределение по наименьшей нагрузке
+        }
+    # Форматы логов
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+
+    log_format proxy_log '$remote_addr - $remote_user [$time_local] "$request" '
+                         '$status $body_bytes_sent "$http_referer" '
+                         '"$http_user_agent" "$proxy_host" "$upstream_addr" '
+                         'rt=$request_time uct="$upstream_connect_time"';
+    
+
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile        on;
+    gzip  on;    
+    gzip_disable "msie6";
+    gzip_min_length 512; 
+    gzip_types text/plain text/xml application/xml text/css application/x-javascript application/javascript application/json text/javascript; 
+    gzip_comp_level 6;
+    gzip_vary on;
+
+    keepalive_timeout  65;
+    keepalive_requests  1000;
+
+    server {
+        listen       80;
+        server_name  178.172.195.18;
+        # access_log   C:/nginx/logs/redirect.log main;
+        access_log /var/log/nginx/redirect.log main;
+        return 301 https://$host$request_uri;        
+    }
+   
+    
+    server {
+    # listen 7681;
+    listen 7681 ssl http2;
+    server_name  178.172.195.18;
+    # server_name  localhost;
+
+    # ssl сертификат
+    ssl_certificate /etc/ssl/certs/selfsigned.crt;
+    ssl_certificate_key /etc/ssl/private/selfsigned.key;
+
+    # access_log C:/nginx/logs/access.log main;    
+    # error_log C:/nginx/logs/error.log notice;
+    access_log /var/log/nginx/access.log main;
+    error_log /var/log/nginx/error.log notice;
+
+    # Раздача статики
+    location /static/ {
+        alias /home/user/Node_JS/public;
+        # alias D:/Node_JS/Node_JS/public;
+        expires 30d;
+        access_log off;
+        add_header Cache-Control "public";
+        gzip_static on;
+    }
+    
+    # Проксирование на Node.js
+    location / {
+        proxy_pass http://nodejs_backend; 
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+
+        proxy_connect_timeout 60s;
+        proxy_read_timeout 60s;
+        proxy_send_timeout 60s;
+
+        # Детальное логирование проксирования
+        # access_log C:/nginx/logs/proxy_access.log proxy_log;
+        access_log /var/log/nginx/proxy_access.log proxy_log;
+    }
+
+}
+
+    server {
+    # listen 7680;
+    listen 7680 ssl http2;
+    server_name  178.172.195.18;
+    # server_name  localhost;
+
+    # ssl сертификат
+    ssl_certificate /etc/ssl/certs/selfsigned.crt;
+    ssl_certificate_key /etc/ssl/private/selfsigned.key;
+
+    # access_log C:/nginx/logs/access.log main;
+    # error_log C:/nginx/logs/error.log warn;
+    access_log /var/log/nginx/access.log main;
+    error_log /var/log/nginx/error.log warn;
+
+    # Раздача статики
+    location /static/ {
+        alias /home/user/Node_JS/public;
+        # alias D:/Node_JS/Node_JS/public;
+        expires 30d;
+        access_log off;
+        add_header Cache-Control "public";
+        gzip_static on;        
+    }
+    
+    # Проксирование на Node.js
+    location / {
+        proxy_pass http://nodejs_backend; 
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_connect_timeout 60s;
+        proxy_read_timeout 60s;
+        proxy_send_timeout 60s;
+
+        # Детальное логирование проксирования
+        # access_log C:/nginx/logs/proxy_access.log proxy_log;
+        access_log /var/log/nginx/proxy_access.log proxy_log;
+    }
+}
+}
