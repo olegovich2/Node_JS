@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Express with Websocket And Authentification</title>
+    <link href="/css/style.css" type="text/css" rel="stylesheet" />
+</head>
+
+<body>
+    <div>
+        <h3>Чтобы войти - заполните данные полей:</h3>
+        <form class="formforEntry" method="post" action="/main" target="_self" data-form="entry">
+            <div class="fields">
+                <p>Введите ваш логин:</p>
+                <input class="input" type="text" placeholder="Введите ваш логин" name="login" data-input="login">
+            </div>
+            <div class="fields">
+                <p>Введите ваш пароль:</p>
+                <input class="input" type="password" placeholder="Введите ваш пароль" name="password" data-input="pass">
+            </div>
+            <button type="button" data-button="entry">Войти</button>
+        </form>
+
+    </div>
+    <div>
+        <h3>Чтобы зарегистрироваться - нажмите на кнопку:</h3>
+        <form class="formforEntry" method="GET" action="/main/auth" target="_self" data-form="toAuth">
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+    </div>
+</body>
+<script type="module" src="/js/dataFromFormEntry.js"></script>
+<script type="module" src="/js/requestsForEntry.js"></script>
+
+</html>
