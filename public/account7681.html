@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en, ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickDiagnosis</title>
+    <link
+        href="https://fonts.googleapis.com/css?family=Montserrat:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i&display=swap&subset=cyrillic"
+        rel="stylesheet">
+    <link href="/css/style.css" type="text/css" rel="stylesheet" />
+    <script src="https://kit.fontawesome.com/d23624fc6e.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <header class="header">
+        <img class="svg_param" src="../images/icon.png" alt="иконка" title="иконка">
+        <h1>QUICK DIAGNOSIS</h1>
+        <button class="exit_button" type="button" data-button="toMain">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </header>
+    <main class="general" data-main="mainElement">
+        <div class="mainAccount">
+            <div class="area_survey">
+                <div class="unvisible" data-account="resultSurvey">
+                    <div id="printFromAccount">
+                        <div class="header_for_print">
+                            <h2>QUICK DIAGNOSIS</h2>
+                        </div>
+                        <h2>Результат опроса</h2>
+                        <div class="content_survey">Дата и время:
+                            <p data-account="dateAndTime"></p>
+                        </div>
+                        <div class="content_survey">Фамилия Имя Отчество:
+                            <p data-account="name"></p>
+                        </div>
+                        <div class="content_survey">Возраст:
+                            <p data-account="age"></p>
+                        </div>
+                        <div class="content_survey">Температура:
+                            <p data-account="temperature"></p>
+                        </div>
+                        <div class="many_content_survey">Описание симптомов:
+                            <p data-account="overview"></p>
+                        </div>
+                        <div class="many_content_survey">Предварительный диагноз:
+                            <p data-account="listDiagnosis"></p>
+                        </div>
+                        <div class="many_content_survey">Рекомендации по обследованию:
+                            <p data-account="diagnostics"></p>
+                        </div>
+                        <div class="many_content_survey">Рекомендации по лечению до обращению к врачу:
+                            <p data-account="treatment"></p>
+                        </div>
+                        <div class="many_content_survey">Дополнительные рекомендации:
+                            <p data-account="volumeOfLiquid"></p>
+                        </div>
+                    </div>
+                    <button class="buttonFromAnamnesis" type="button" data-account="print">Печать</button>
+                    <button class="buttonFromAnamnesis" type="button" data-account="closeResultSurvey">Закрыть</button>
+                    <button class="buttonFromAnamnesis" type="button" data-account="saveAs">Сохранить как
+                        Word</button>
+                </div>
+            </div>
+            <div class="area_inspection_list">
+                <h2>Все осмотры</h2>
+                <div data-container="allSurveyFromDB"></div>
+            </div>
+        </div>
+        <div class="formForImageAndResult">
+            <div class="uploadOnServer" data-div="uploadOnServer">
+                <form class="formForUploadOnServer" data-form="formForUploadOnServer">
+                    <p>Здесь Вы можете загрузить изображение (флюорографию, изображения сыпи и тд.):</p>
+                    <input class="file" type="file" name="fileName" data-input="fileChoice"
+                        accept="image/jpeg, image/png, image/gif, .jpg, .jpeg, .png, .gif" webkitfile />
+                    <textarea class="comment" rows="4" placeholder="Введите комментарий"
+                        name="textareaComment"></textarea>
+                    <button class="buttonFromTemplate" type="button" data-button="buttonUpload">Загрузить</button>
+                </form>
+            </div>
+            <div class="progress-bar unvisible">
+                <div class="progress-bar-inner"></div>
+            </div>
+            <div class="allDownloadImages" data-div="allDownloadImages">
+            </div>
+        </div>
+        <div class="visibilityImage" data-div="visibilityImage">
+        </div>
+    </main>
+    <footer class="footer">
+        <h6 class="footer_content">&copy;olegovich</h6>
+    </footer>
+    <template data-template="allSurveyFromDB">
+        <div class="oneSurvey" data-div="">
+            <p data-container="date"></p>
+            <button class="buttonFromTemplate" type="button" data-container="lookButton" data-id>Посмотреть</button>
+            <button class="buttonFromTemplate" type="button" data-container="deleteButton" data-id>Удалить</button>
+        </div>
+    </template>
+    <template data-template="allImagesFromDB">
+        <div class="imageFromDB" data-div="">
+            <div class="blockIMG">
+                <img class="smallImageUpload" data-img="fromDB">
+            </div>
+            <div class="blockFileInfo">
+                <p data-container="filename"></p>
+                <p data-container="comment"></p>
+            </div>
+            <div class="blockButtons">
+                <button class="buttonFromTemplate" type="button" data-container="lookButtonImages" data-id>Посмотреть</button>
+                <button class="buttonFromTemplate" type="button" data-container="deleteButtonImages" data-id>Удалить</button>
+            </div>
+        </div>
+    </template>
+    <template data-template="originImagesFromDB">
+        <div class="blur">
+        <div class="imgWithButtonsOrigin">
+            <div class="blockVisIMG">
+                <img class="originImage" data-img="originfromDB">
+            </div>
+            <div class="blockButtonsTwo">
+                <button class="buttonFromTemplateTwo" type="button" data-container="downloadButtonImages" data-id>Загрузить</button>
+                <button class="buttonFromTemplateTwo" type="button" data-container="closeOriginImage" data-id>Закрыть</button>
+            </div>
+        </div>
+        </div>
+    </template>
+</body>
+<script type="module" src="/js/constants/allConstants.js"></script>
+<script type="module" src="/js/forAccount/allFunctionsForWorkAccount.js"></script>
+<script type="module" src="/js/forAccount/requests.js"></script>
+<script type="module" src="/js/forAccount/logicPage.js"></script>
+
+</html>
